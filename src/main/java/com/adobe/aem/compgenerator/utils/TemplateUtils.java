@@ -33,7 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 class TemplateUtils {
-    private static final String TEMPLATE_DEFINITIONS = "$['options']['template-definitions']";
+    private static final String TEMPLATE_DEFINITIONS = "$['template-definitions']";
     private static final String TEMPLATE_COPY_PATTERN_BEFORE = TEMPLATE_DEFINITIONS + "['copy-patterns']";
     private static final String TEMPLATE_FIELDS_WITH_PLACEHOLDERS =
             TEMPLATE_DEFINITIONS + "['placeholder-patterns'].jsonPath";
