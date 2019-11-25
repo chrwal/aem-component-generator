@@ -54,7 +54,7 @@ class TemplateUtils {
                     "$.['options'].['replaceValueMap']", generationConfig);
 
             List<PathValueHolder<Object>> pathValueHolders =
-                    readValuesFromJsonPath(dataConfigLoc, "$.['options'].['replaceValueMap']", null);
+                    readValuesFromJsonPath(dataConfigLoc, "$.['options'].['replaceValueMap']", null, true);
             Map valueMap = (Map) pathValueHolders.get(0).getValue();
             LOG.trace("Found valueMap: " + valueMap.toString());
             generationConfig.getOptions().setReplaceValueMap(valueMap);
@@ -88,7 +88,7 @@ class TemplateUtils {
             String targetPathjforReplacerValueMap, GenerationConfig generationConfig) {
         dataConfig = bringTemplateValuesInDataConfig(dataConfig, templateCollectPatternAfter);
         final List<PathValueHolder<Map>> pathValueHolders =
-                readValuesFromJsonPath(dataConfig, targetPathjforReplacerValueMap, null);
+                readValuesFromJsonPath(dataConfig, targetPathjforReplacerValueMap, null, true);
         PathValueHolder<Map> replaceValueMap = pathValueHolders.get(0);
         for (Map.Entry<String, Object> replacerEntry : ((Map<String, Object>) replaceValueMap.getValue()).entrySet()) {
             String replacerKey = replacerEntry.getKey();
@@ -96,8 +96,8 @@ class TemplateUtils {
             LOG.trace("replaceValueMapPath {} replacerKey {} replacerJsonPathValue {}", replaceValueMap.getPath(),
                     replacerKey, replacerJsonPathValue);
             List<String> valuesfromReplacerJsonPathValue = new ArrayList<>();
-            for (PathValueHolder<Object> replacerValue : readValuesFromJsonPath(dataConfig, replacerJsonPathValue,
-                    null)) {
+            for (PathValueHolder<Object> replacerValue : readValuesFromJsonPath(dataConfig, replacerJsonPathValue, null,
+                    false)) {
                 LOG.trace("Found Values: " + replacerValue.getValue().toString());
                 valuesfromReplacerJsonPathValue.add((String) replacerValue.getValue());
             }
@@ -125,8 +125,10 @@ class TemplateUtils {
     private static String resolveRelativeJsonPathsInDataConfig(String dataConfig) throws IOException {
         Map<String, String> stringsToReplaceValueMap = new LinkedHashMap<>();
         String templateFinder =
-                (String) readValuesFromJsonPath(dataConfig, TEMPLATE_FIELDS_WITH_PLACEHOLDERS, null).get(0).getValue();
-        for (PathValueHolder<Object> objectPathValueHolder : readValuesFromJsonPath(dataConfig, templateFinder, null)) {
+                (String) readValuesFromJsonPath(dataConfig, TEMPLATE_FIELDS_WITH_PLACEHOLDERS, null, false).get(0)
+                        .getValue();
+        for (PathValueHolder<Object> objectPathValueHolder : readValuesFromJsonPath(dataConfig, templateFinder, null,
+                true)) {
             String templateJasonPath = unifyJasonPath(objectPathValueHolder.getPath());
             try {
                 StringWriter outputWriter = new StringWriter();
@@ -138,17 +140,24 @@ class TemplateUtils {
                     String templateParentPath = StringUtils.substringBeforeLast(templateJasonPath, ".");
                     String relativeJsonPath =
                             StringUtils.replace(StringUtils.substringBeforeLast(templateToken, "}"), "@{", "@");
-                    String valueAsJsonFrom = (String) readValuesFromJsonPath(dataConfig,
-                            buildJasonPath(templateParentPath, relativeJsonPath), null).get(0).getValue();
-                    LOG.trace("put templateToken {} with value  {}", templateToken, valueAsJsonFrom);
-                    stringsToReplaceValueMap
-                            .put(StringUtils.substringBetween(templateToken, "{", "}"), valueAsJsonFrom);
+                    final List<PathValueHolder<Object>> pathValueHolders =
+                            readValuesFromJsonPath(dataConfig, buildJasonPath(templateParentPath, relativeJsonPath),
+                                    null, true);
+                    if (pathValueHolders.isEmpty()) {
+                        LOG.warn("Problem reading value empty for template Json path {} relativeJsonPath {}",
+                                templateParentPath, relativeJsonPath);
+                    } else {
+                        String valueAsJsonFrom = (String) pathValueHolders.get(0).getValue();
+                        LOG.trace("put templateToken {} with value  {}", templateToken, valueAsJsonFrom);
+                        stringsToReplaceValueMap
+                                .put(StringUtils.substringBetween(templateToken, "{", "}"), valueAsJsonFrom);
+                    }
                 }
                 StringSubstitutor stringSubstitutor = new StringSubstitutor(stringsToReplaceValueMap, "@{", "}");
                 dataConfig = setDataToJsonByJsonPath(dataConfig, templateJasonPath, "@",
                         new ObjectMapper().readValue(stringSubstitutor.replace(templateJsonValue), Object.class));
             } catch (JsonProcessingException e) {
-                LOG.warn("Problem reading template Json for path " + templateJasonPath, e);
+                LOG.warn("Problem reading template Json for path {}", templateJasonPath, e);
             }
         }
         return dataConfig;
@@ -176,7 +185,7 @@ class TemplateUtils {
             String definitionTypeNodeName) {
         List<TemplateDefinition> templateDefinitions = new ArrayList<>();
         List<PathValueHolder<Map<String, String>>> foundDefinitionTypes =
-                readValuesFromJsonPath(dataConfigJson, definitionTypeNodeName + ".*", null);
+                readValuesFromJsonPath(dataConfigJson, definitionTypeNodeName + ".*", null, true);
         for (PathValueHolder<Map<String, String>> foundDefinitionType : foundDefinitionTypes) {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -210,7 +219,8 @@ class TemplateUtils {
                     String replacerJsonPathValue = patternAttributes.getValue();
                     String jsonPathToSearchInDataJson = unifyJasonPath(baseJsonPath);
                     List<String> jsonPathsToAdd =
-                            readPathsFromJsonPath(dataConfigLocal, jsonPathToSearchInDataJson, null);
+                            readPathsFromJsonPath(dataConfigLocal, jsonPathToSearchInDataJson, null,
+                                    collectPattern.isWarnMissingPaths());
                     LOG.trace("bringTemplateValuesInDataConfig - jsonPathToSearchInDataJson {} jsonPathToAdd {} found",
                             jsonPathToSearchInDataJson, jsonPathsToAdd);
                     for (String jsonPathToAdd : jsonPathsToAdd) {
@@ -293,8 +303,8 @@ class TemplateUtils {
     }
 
     static <T> List<PathValueHolder<T>> readValuesFromJsonPath(String dataConfigJson, String jasonPath,
-            Predicate<String> filterPaths) {
-        final List<String> pathsFound = readPathsFromJsonPath(dataConfigJson, jasonPath, filterPaths);
+            Predicate<String> filterPaths, boolean warnMissingPath) {
+        final List<String> pathsFound = readPathsFromJsonPath(dataConfigJson, jasonPath, filterPaths, warnMissingPath);
         final List<PathValueHolder<T>> pathValues = new ArrayList<PathValueHolder<T>>();
         for (String path : pathsFound) {
             String unifyJasonPath = unifyJasonPath(path);
@@ -310,7 +320,8 @@ class TemplateUtils {
         return pathValues;
     }
 
-    static List<String> readPathsFromJsonPath(String dataConfigJson, String readPath, Predicate<String> filterPaths) {
+    static List<String> readPathsFromJsonPath(String dataConfigJson, String readPath, Predicate<String> filterPaths,
+            boolean warnMissing) {
         Configuration conf = Configuration.builder().options(Option.AS_PATH_LIST).build();
         String unifyJasonPath = unifyJasonPath(readPath);
         LOG.trace("readPathsFromJsonPath - readPath {}", unifyJasonPath);
@@ -322,7 +333,11 @@ class TemplateUtils {
             }
         } catch (PathNotFoundException e) {
             LOG.trace("readPathsFromJsonPath - dataConfigJson {}", dataConfigJson);
-            LOG.warn("readPathsFromJsonPath - readPath " + unifyJasonPath, e);
+            if (warnMissing) {
+                LOG.warn("readPathsFromJsonPath - readPath " + unifyJasonPath, e);
+            } else {
+                LOG.debug("readPathsFromJsonPath - readPath " + unifyJasonPath, e);
+            }
         } catch (Exception e) {
             String urlForTesting = null;
             try {
@@ -345,6 +360,9 @@ class TemplateUtils {
         @JsonProperty("targetAttributes")
         private Map<String, String> targetAttributes;
 
+        @JsonProperty("warnMissingPaths")
+        private boolean warnMissingPaths;
+
         String getbaseJsonPath() {
             return baseJsonPath;
         }
@@ -359,6 +377,14 @@ class TemplateUtils {
 
         public void setTargetAttributes(Map<String, String> targetAttributes) {
             this.targetAttributes = targetAttributes;
+        }
+
+        public boolean isWarnMissingPaths() {
+            return warnMissingPaths;
+        }
+
+        public void setWarnMissingPaths(boolean warnMissingPaths) {
+            this.warnMissingPaths = warnMissingPaths;
         }
 
         @Override

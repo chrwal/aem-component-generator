@@ -49,7 +49,7 @@ class TemplateUtilsTest {
     void testReadValuesFromJsonPath() {
         String testJson = "{ \"root\" : { \"node1\" : \"zui\" ,  \"node2\" : \"asd\" ,  \"node3\" : \"rtz}\" } }";
         List<TemplateUtils.PathValueHolder<Map>> copySourceBefore =
-                TemplateUtils.readValuesFromJsonPath(testJson, "$.root[*]", null);
+                TemplateUtils.readValuesFromJsonPath(testJson, "$.root[*]", null, true);
         Assertions.assertEquals("zui", copySourceBefore.get(0).getValue());
     }
 
@@ -57,15 +57,15 @@ class TemplateUtilsTest {
     void testReadPathListFromJsonPath() throws IOException {
         String testJson = "{ \"root\" : { \"node1\" : \"zui\" ,  \"node2\" : \"asd\" ,  \"node3\" : \"rtz}\" } }";
 
-        List<String> pathListFiltered =
-                TemplateUtils.readPathsFromJsonPath(testJson, "$.root.*", path -> StringUtils.endsWith(path, "e3']"));
+        List<String> pathListFiltered = TemplateUtils
+                .readPathsFromJsonPath(testJson, "$.root.*", path -> StringUtils.endsWith(path, "e3']"), true);
         Assertions.assertArrayEquals(new String[]{"$['root']['node3']"}, pathListFiltered.toArray(new String[]{}));
 
-        pathListFiltered = TemplateUtils.readPathsFromJsonPath(testJson, "$.rootNotThere.*", null);
+        pathListFiltered = TemplateUtils.readPathsFromJsonPath(testJson, "$.rootNotThere.*", null, false);
         Assertions.assertArrayEquals(new String[]{}, pathListFiltered.toArray(new String[]{}));
 
         Assertions.assertThrows(GeneratorException.class, () -> {
-            TemplateUtils.readPathsFromJsonPath(testJson, "$rootInvalid.*", null);
+            TemplateUtils.readPathsFromJsonPath(testJson, "$rootInvalid.*", null, false);
         });
     }
 
@@ -78,21 +78,24 @@ class TemplateUtilsTest {
         String relativeJsonPath = "@.html.other";
         String newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath, targetValue);
         Assertions.assertEquals(targetValue, TemplateUtils.readValuesFromJsonPath(newJson,
-                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null).get(0)
+                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null, true)
+                .get(0)
                 .getValue());
 
         jsonPathToAdd = "['$.root']";
         relativeJsonPath = "@.node2.html";
         newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath, targetValue);
         Assertions.assertEquals(targetValue, TemplateUtils.readValuesFromJsonPath(newJson,
-                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null).get(0)
+                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null, true)
+                .get(0)
                 .getValue());
 
         jsonPathToAdd = "['$']";
         relativeJsonPath = "@.root.html";
         newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath, targetValue);
         Assertions.assertEquals(targetValue, TemplateUtils.readValuesFromJsonPath(newJson,
-                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null).get(0)
+                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null, true)
+                .get(0)
                 .getValue());
     }
 
@@ -105,7 +108,7 @@ class TemplateUtilsTest {
         String newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath,
                 new ObjectMapper().readValue(testJson, Object.class));
         Assertions.assertEquals("asd",
-                TemplateUtils.readValuesFromJsonPath(newJson, "$.root.html.node1", null).get(0).getValue());
+                TemplateUtils.readValuesFromJsonPath(newJson, "$.root.html.node1", null, true).get(0).getValue());
     }
 
     @Test
