@@ -229,7 +229,7 @@
                 "template": {
                     "html": {
                         "_comment_": "Template variables (@{...}) in values below means relative replacement to \"template\" parent path",
-                        "content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>Path: ${item.path}</p>\n\t\t<p>Label: ${item.label}</p>\n\t</div>"
+                        "content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>@{items[0].label}: ${item.path}</p>\n\t\t<p>@{items[1].label}: ${item.label}</p>\n\t</div>"
                     }
                 }
             },
@@ -287,6 +287,7 @@
             {
                 "_comment_": "All properties with type multifield and no content is actually set get different content",
                 "baseJsonPath": "$.options.['properties','properties-shared','properties-global'].[?((@.field) && (@.type == \"multifield\") && !(@.template.html.content))]",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>@{label}: ${item}</p>\n\t</div>"
                 }
@@ -294,6 +295,7 @@
             {
                 "_comment_": "All properties with type multifield  and no content is actually set get different content",
                 "baseJsonPath": "$.options.['properties','properties-shared','properties-global'].[?((@.field) && (@.type == \"image\") && !(@.template.html.content))]",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>@{label}: <img src=\"$${${sightly}Model.@{field}.src}\"/></p>"
                 }
@@ -301,6 +303,7 @@
             {
                 "_comment_": "Apply default values for properties for content not already set",
                 "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && (@.label) && !(@.template.html.content))]",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>@{label}: $${${sightly}Model.@{field}}</p>"
                 }
@@ -308,6 +311,7 @@
             {
                 "_comment_": "Apply default values for properties for content not already set",
                 "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && !(@.label) && !(@.template.html.content))]",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>$${${sightly}Model.@{field}}</p>"
                 }
@@ -315,6 +319,7 @@
             {
                 "_comment_": "All properties with template.attribute",
                 "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && !(@.template.html.attribute))]",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.attribute": "${template.attribute}=\"$${${sightly}Model.@{field}}\""
                 }
@@ -328,6 +333,7 @@
             {
                 "_comment_": "After resolving the variables we need to collect the resolved texts, key and value are a jasonPath",
                 "baseJsonPath": "$",
+                "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.options.replaceValueMap.template-html-component": "$.options.template.html.component",
                     "@.options.replaceValueMap.template-html-content": "$.options['properties','properties-shared','properties-global'][?(@.template.html.content)].template.html.content",
