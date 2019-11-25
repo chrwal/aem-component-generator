@@ -62,6 +62,9 @@ public class Options implements BaseModel {
     @JsonProperty("properties")
     private List<Property> properties;
 
+    @JsonProperty("editor-config")
+    private EditorConfig editorConfig;
+
     @JsonProperty("properties-global")
     private List<Property> globalProperties;
 
@@ -181,4 +184,13 @@ public class Options implements BaseModel {
     public boolean isValid() {
         return true;
     }
+
+    public EditorConfig getEditorConfig() {
+        return editorConfig;
+    }
+
+    public void setEditorConfig(EditorConfig editorConfig) {
+        this.editorConfig = editorConfig;
+    }
+
 }

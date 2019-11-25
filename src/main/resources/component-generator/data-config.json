@@ -23,6 +23,34 @@
             "request"
         ],
         "generic-javadoc": false,
+        "editor-config": {
+            "cq:editConfig": {
+                "cq:isContainer": true,
+                "cq:actions": [
+                    "edit",
+                    "delete"
+                ],
+                "cq:listeners": {
+                    "afterchildinsert": "REFRESH_PAGE",
+                    "afterdelete": "REFRESH_PAGE",
+                    "afteredit": "REFRESH_PAGE",
+                    "afterinsert": "REFRESH_PAGE"
+                }
+            },
+            "cq:childEditConfig": {
+                "cq:isContainer": true,
+                "cq:actions": [
+                    "edit",
+                    "delete"
+                ],
+                "cq:listeners": {
+                    "afterchildinsert": "REFRESH_PAGE",
+                    "afterdelete": "REFRESH_PAGE",
+                    "afteredit": "REFRESH_PAGE",
+                    "afterinsert": "REFRESH_PAGE"
+                }
+            }
+        },
         "properties": [
             {
                 "field": "textfieldTest",

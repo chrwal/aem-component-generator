@@ -1,0 +1,83 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "cq:editConfig": {
+            "type": "object",
+            "properties": {
+                "cq:isContainer": {
+                    "type": "boolean"
+                },
+                "cq:actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "edit",
+                            "delete"
+                        ]
+                    }
+                },
+                "cq:listeners": {
+                    "type": "object",
+                    "$ref": "#/definitions/cq:listeners"
+                }
+            }
+        },
+        "cq:listeners": {
+            "type": "object",
+            "properties": {
+                "afterchildinsert": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "aftercopy": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "afterdelete": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "afteredit": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "afterinsert": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "aftermove": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforechildinsert": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforecopy": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforedelete": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforeedit": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforeinsert": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                },
+                "beforemove": {
+                    "$ref": "#/definitions/cq:listeners_basic_events"
+                }
+            }
+        },
+        "cq:listeners_basic_events": {
+            "enum": [
+                "REFRESH_SELF",
+                "REFRESH_PAGE"
+            ]
+        }
+    },
+    "type": "object",
+    "properties": {
+        "cq:editConfig": {
+            "$ref": "#/definitions/cq:editConfig"
+        },
+        "cq:childEditConfig": {
+            "$ref": "#/definitions/cq:editConfig"
+        }
+    }
+}

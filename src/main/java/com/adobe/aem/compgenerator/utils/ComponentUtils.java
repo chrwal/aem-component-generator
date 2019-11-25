@@ -68,6 +68,16 @@ public class ComponentUtils {
         //creates base component folder.
         createFolderWithContentXML(generationConfig.getCompDir(), Constants.TYPE_CQ_COMPONENT, generationConfig);
 
+        if (generationConfig.getOptions().getEditorConfig() != null) {
+            //create editConfig xml
+            EditConfigUtils.createEditConfigXml(generationConfig,
+                    generationConfig.getOptions().getEditorConfig().getCqEditConfig(),
+                    EditConfigUtils.DIALOG_EDIT_CONFIG_NAME, EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE);
+            //create childEditConfig xml
+            EditConfigUtils.createEditConfigXml(generationConfig,
+                    generationConfig.getOptions().getEditorConfig().getCqChildEditConfig(),
+                    EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_NAME, EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_TYPE);
+        }
         //create _cq_dialog xml with user input properties in json.
         DialogUtils.createDialogXml(generationConfig, Constants.DIALOG_TYPE_DIALOG);
 
