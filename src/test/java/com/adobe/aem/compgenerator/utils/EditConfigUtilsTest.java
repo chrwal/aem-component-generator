@@ -82,14 +82,17 @@ class EditConfigUtilsTest {
     void testGetCreateEditorConfig() throws Exception {
         Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
         Element rootElement = XMLUtils.createRootElement(doc, generationConfig);
+        final int rootElementsCount = rootElement.getAttributes().getLength();
+        final int expectedELementsCountFromEditConfig = 3 + rootElementsCount;
+
         final Element cqEditorRoot = EditConfigUtils.createCqEditorRoot(doc, generationConfig,
                 generationConfig.getOptions().getEditorConfig().getCqEditConfig(),
                 EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE);
-        Assertions.assertEquals(7, cqEditorRoot.getAttributes().getLength());
+        Assertions.assertEquals(expectedELementsCountFromEditConfig, cqEditorRoot.getAttributes().getLength());
 
         final Element cqChildEditorRoot = EditConfigUtils.createCqEditorRoot(doc, generationConfig,
                 generationConfig.getOptions().getEditorConfig().getCqChildEditConfig(),
                 EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_TYPE);
-        Assertions.assertEquals(7, cqChildEditorRoot.getAttributes().getLength());
+        Assertions.assertEquals(expectedELementsCountFromEditConfig, cqChildEditorRoot.getAttributes().getLength());
     }
 }

@@ -223,6 +223,22 @@ public class DialogUtils {
     }
 
     /**
+     * Processes the graniteData for a propertyNode.
+     *
+     * @param document     ..
+     * @param property     The {@link Property} object contains attributes
+     * @param propertyNode The node to add property attributes
+     */
+    private static void processGraniteData(Document document, Element propertyNode, Property property) {
+        if (property.getGraniteDate() != null && property.getGraniteDate().size() > 0) {
+            Element graniteData = createUnStructuredNode(document, "granite:data");
+            property.getGraniteDate().entrySet().stream()
+                    .forEach(entry -> graniteData.setAttribute(entry.getKey(), entry.getValue()));
+            propertyNode.appendChild(graniteData);
+        }
+    }
+
+    /**
      * Process the dialog node item by setting property attributes on it.
      *
      * @param document The {@link Document} object
@@ -363,6 +379,8 @@ public class DialogUtils {
             return Constants.RESOURCE_TYPE_NUMBER;
         } else if (Property.FieldType.CHECKBOX.equals(type)) {
             return Constants.RESOURCE_TYPE_CHECKBOX;
+        } else if (Property.FieldType.CONTAINER.equals(type)) {
+            return Constants.RESOURCE_TYPE_CONTAINER;
         } else if (Property.FieldType.PATHFIELD.equals(type)) {
             return Constants.RESOURCE_TYPE_PATHFIELD;
         } else if (Property.FieldType.TEXTAREA.equals(type)) {

@@ -167,6 +167,8 @@ public class JavaCodeModel {
             return "java.lang.Long";
         } else if (type.equals(Property.FieldType.CHECKBOX)) {
             return "java.lang.Boolean";
+        } else if (type.equals(Property.FieldType.CONTAINER)) {
+            return "java.util.List";
         } else if (type.equals(Property.FieldType.DATEPICKER)) {
             return "java.util.Calendar";
         } else if (type.equals(Property.FieldType.IMAGE)) {

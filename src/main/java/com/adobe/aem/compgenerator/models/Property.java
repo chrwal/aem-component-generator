@@ -31,7 +31,7 @@ public class Property implements BaseModel {
 
     public enum FieldType {
         TEXTFIELD("textfield", true), NUMBERFIELD("numberfield", true), CHECKBOX("checkbox", true),
-        PATHFIELD("pathfield", true), TEXTAREA("textarea", true), HIDDEN("hidden", true),
+        CONTAINER("container", false), PATHFIELD("pathfield", true), TEXTAREA("textarea", true), HIDDEN("hidden", true),
         DATEPICKER("datepicker", true), SELECT("select", true), RADIOGROUP("radiogroup", true), RADIO("radio", false),
         IMAGE("image", false), MULTIFIELD("multifield", false), HIDDEN_MULTIFIELD("hidden-multifield", false),
         UNKOWN("unkown", true), EMPTY("", false);
@@ -100,6 +100,9 @@ public class Property implements BaseModel {
 
     @JsonProperty(value = "items")
     private List<Property> items;
+
+    @JsonProperty("granite:data")
+    private Map<String, String> graniteDate;
 
     @JsonProperty(value = "model-name")
     private String modelName;
@@ -196,6 +199,14 @@ public class Property implements BaseModel {
 
     public void setItems(List<Property> items) {
         this.items = items;
+    }
+
+    public Map<String, String> getGraniteDate() {
+        return graniteDate;
+    }
+
+    public void setGraniteDate(Map<String, String> graniteDate) {
+        this.graniteDate = graniteDate;
     }
 
     public String getModelName() {
