@@ -33,7 +33,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.util.List;
-import java.util.Objects;
 
 public class DialogUtils {
     private static final Logger LOG = LogManager.getLogger(DialogUtils.class);
@@ -58,18 +57,32 @@ public class DialogUtils {
             } else if (dialogType.equalsIgnoreCase(Constants.DIALOG_TYPE_SHARED)) {
                 properties = generationConfig.getOptions().getSharedProperties();
             }
-
-            if (properties != null && properties.size() > 0) {
-                Node currentNode = updateDefaultNodeStructure(doc, rootElement);
-                properties.stream().filter(Objects::nonNull)
-                        .map(property -> createPropertyNode(doc, currentNode, property)).filter(Objects::nonNull)
-                        .forEach(a -> currentNode.appendChild(a));
-            }
+            Node rootNode = updateDefaultNodeStructure(doc, rootElement);
+            handleProperties(doc, rootNode, properties, true);
 
             doc.appendChild(rootElement);
             XMLUtils.transformDomToFile(doc, dialogPath + "/" + Constants.FILENAME_CONTENT_XML);
         } catch (Exception e) {
             throw new GeneratorException("Exception while creating Dialog xml : " + dialogPath, e);
+        }
+    }
+
+    private static void handleProperties(Document document, Node rootNode, List<Property> properties,
+            boolean rederItemsNode) {
+        if (properties != null && properties.size() > 0) {
+            LOG.debug("handleProperties for element [{}] ", rootNode.getNodeName());
+            Node subNode = rootNode;
+            if (rederItemsNode) {
+                subNode = rootNode.appendChild(createUnStructuredNode(document, "items"));
+            }
+            for (Property property : properties) {
+                if (property != null) {
+                    Element a = createPropertyNode(document, subNode, property);
+                    if (a != null) {
+                        subNode.appendChild(a);
+                    }
+                }
+            }
         }
     }
 
@@ -108,69 +121,42 @@ public class DialogUtils {
      * @return Element
      */
     private static Element createPropertyNode(Document document, Node currentNode, Property property) {
+        LOG.debug("createPropertyNode for node [{}] and property [{}]", currentNode.getNodeName(), property.getField());
         Element propertyNode = document.createElement(property.getField());
 
         propertyNode.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-        propertyNode.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, getSlingResourceType(property));
+        setSlingResourceType(propertyNode, property);
 
         // Some of the properties are optional based on the different types available.
         addBasicProperties(propertyNode, property);
 
-        if (StringUtils.isNotEmpty(property.getField()) && (!property.getTypeAsFieldType().equals(Property.FieldType.RADIOGROUP))
-                || !property.getTypeAsFieldType().equals(Property.FieldType.IMAGE) && !property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)) {
+        if (StringUtils.isNotEmpty(property.getField()) && property.getTypeAsFieldType() != null &&
+                (property.getTypeAsFieldType().isCreateNameAndLockable()) &&
+                BooleanUtils.isNotTrue(property.isChildResource())) {
+            LOG.debug("createNameAndLockable for field [{}] and type [{}]", property.getField(),
+                    property.getTypeAsFieldType());
             propertyNode.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
             propertyNode.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+        } else {
+            LOG.debug("No createNameAndLockable for field [{}] and type [{}] isChild [{}]", property.getField(),
+                    property.getTypeAsFieldType(), property.isChildResource());
         }
-
         processAttributes(propertyNode, property);
+        processGraniteData(document, propertyNode, property);
 
         if (property.getItems() != null && !property.getItems().isEmpty()) {
-            if (!property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)) {
+            if (Property.FieldType.MULTIFIELD == property.getTypeAsFieldType()) {
+                handleMultifieldProperty(document, property, propertyNode);
+            } else if (Property.FieldType.HIDDEN_MULTIFIELD == property.getTypeAsFieldType() ||
+                    Property.FieldType.CONTAINER == property.getTypeAsFieldType()) {
+                handleProperties(document, propertyNode, property.getItems(), true);
+            } else {
                 Node items = propertyNode.appendChild(createUnStructuredNode(document, "items"));
                 processItems(document, items, property);
-            } else {
-                Element field = document.createElement("field");
-                field.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-                field.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
-                field.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
-                field.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_FIELDSET);
-
-                if (property.getItems().size() == 1) {
-                    Element layout = document.createElement("layout");
-                    layout.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-                    layout.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_FIXEDCOLUMNS);
-                    layout.setAttribute("method", "absolute");
-                    field.appendChild(layout);
-
-                    Node items = field.appendChild(createUnStructuredNode(document, "items"));
-                    Element column = document.createElement("column");
-                    column.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-                    column.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_CONTAINER);
-                    items.appendChild(column);
-
-                    items = column.appendChild(createUnStructuredNode(document, "items"));
-
-                    Element actualField = document.createElement("field");
-                    actualField.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-                    actualField.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
-                    actualField.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
-
-                    Property prop = property.getItems().get(0);
-                    actualField.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, getSlingResourceType(prop));
-                    addBasicProperties(actualField, prop);
-                    processAttributes(actualField, prop);
-                    items.appendChild(actualField);
-                } else {
-                    propertyNode.setAttribute(Constants.PROPERTY_COMPOSITE, "{Boolean}true");
-                    Node items = field.appendChild(createUnStructuredNode(document, "items"));
-                    processItems(document, items, property);
-                }
-
-                propertyNode.appendChild(field);
             }
         }
 
-        if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
+        if (Property.FieldType.IMAGE.equals(property.getTypeAsFieldType())) {
             addImagePropertyValues(propertyNode, property);
             currentNode.appendChild(propertyNode);
 
@@ -180,6 +166,47 @@ public class DialogUtils {
         }
 
         return propertyNode;
+    }
+
+    private static void handleMultifieldProperty(Document document, Property property, Element propertyNode) {
+        Element field = document.createElement("field");
+        field.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
+        field.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
+        field.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+        field.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_FIELDSET);
+
+        if (property.getItems().size() == 1) {
+            Element layout = document.createElement("layout");
+            layout.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
+            layout.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_FIXEDCOLUMNS);
+            layout.setAttribute("method", "absolute");
+            field.appendChild(layout);
+
+            Node items = field.appendChild(createUnStructuredNode(document, "items"));
+            Element column = document.createElement("column");
+            column.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
+            column.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_CONTAINER);
+            items.appendChild(column);
+
+            items = column.appendChild(createUnStructuredNode(document, "items"));
+
+            Element actualField = document.createElement("field");
+            actualField.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
+            actualField.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
+            actualField.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+
+            Property prop = property.getItems().get(0);
+            setSlingResourceType(actualField, prop);
+            addBasicProperties(actualField, prop);
+            processAttributes(actualField, prop);
+            items.appendChild(actualField);
+        } else {
+            propertyNode.setAttribute(Constants.PROPERTY_COMPOSITE, "{Boolean}true");
+            Node items = field.appendChild(createUnStructuredNode(document, "items"));
+            processItems(document, items, property);
+        }
+
+        propertyNode.appendChild(field);
     }
 
     /**
@@ -213,10 +240,7 @@ public class DialogUtils {
 
             addBasicProperties(optionNode, propertyItem);
 
-            String resourceType = getSlingResourceType(propertyItem);
-            if (StringUtils.isNotEmpty(resourceType)) {
-                optionNode.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, resourceType);
-            }
+            setSlingResourceType(optionNode, propertyItem);
 
             if (property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)) {
                 optionNode.setAttribute(Constants.PROPERTY_NAME, "./" + propertyItem.getField());
@@ -224,6 +248,13 @@ public class DialogUtils {
 
             processAttributes(optionNode, propertyItem);
             itemsNode.appendChild(optionNode);
+        }
+    }
+
+    private static void setSlingResourceType(Element propertyNode, Property property) {
+        String resourceType = getSlingResourceType(property);
+        if (StringUtils.isNotEmpty(resourceType)) {
+            propertyNode.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, resourceType);
         }
     }
 
@@ -302,8 +333,7 @@ public class DialogUtils {
         Node containerNode = root.appendChild(containerElement);
 
         containerNode.appendChild(layoutElement1);
-        return containerNode.appendChild(createUnStructuredNode(document, "items")).appendChild(columnElement)
-                .appendChild(createUnStructuredNode(document, "items"));
+        return containerNode.appendChild(createUnStructuredNode(document, "items")).appendChild(columnElement);
     }
 
     /**
@@ -313,7 +343,7 @@ public class DialogUtils {
      * @param nodeName The name of the node being created
      * @return Node
      */
-    protected static Node createUnStructuredNode(Document document, String nodeName) {
+    protected static Element createUnStructuredNode(Document document, String nodeName) {
         Element element = document.createElement(nodeName);
         element.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
         return element;
