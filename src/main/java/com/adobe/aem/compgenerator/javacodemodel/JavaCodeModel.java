@@ -21,6 +21,7 @@ package com.adobe.aem.compgenerator.javacodemodel;
 
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.OptionTemplateTxt;
+import com.adobe.aem.compgenerator.models.ProjectSettings;
 import com.adobe.aem.compgenerator.models.Property;
 import com.adobe.aem.compgenerator.utils.CommonUtils;
 import com.sun.codemodel.CodeWriter;
@@ -130,6 +131,24 @@ public class JavaCodeModel {
     }
 
     /**
+     * Generates the sling model fully qualified modelClassName
+     *
+     * @param projectSettings see ProjectSettings
+     * @param modelClassName  the property model class name
+     * @return the fullyQualifiedModelClassName
+     */
+    public static String getFullyQualifiedModelClassName(ProjectSettings projectSettings, String modelClassName) {
+        String absolutModelClassName;
+        if (StringUtils.contains(modelClassName, ".")) {
+            //modelClassName is already fully qualified not relative to package
+            absolutModelClassName = modelClassName;
+        } else {
+            absolutModelClassName = projectSettings.getModelInterfacePackage() + "." + modelClassName;
+        }
+        return absolutModelClassName;
+    }
+
+    /**
      * Get the java fieldType based on the type input in the generationConfig
      *
      * @param property the property definition
@@ -153,6 +172,8 @@ public class JavaCodeModel {
         } else if (type.equals(Property.FieldType.IMAGE)) {
             return "com.adobe.cq.wcm.core.components.models.Image";
         } else if (type.equals(Property.FieldType.MULTIFIELD)) {
+            return "java.util.List";
+        } else if (type.equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
             return "java.util.List";
         } else if (type.equals(Property.FieldType.UNKOWN)) {
             return property.getModelName();

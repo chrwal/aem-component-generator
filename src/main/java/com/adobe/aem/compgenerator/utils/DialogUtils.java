@@ -23,7 +23,10 @@ import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.Property;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -33,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class DialogUtils {
+    private static final Logger LOG = LogManager.getLogger(DialogUtils.class);
 
     /**
      * Creates dialog xml by adding the properties in data-config json file.
@@ -199,6 +203,10 @@ public class DialogUtils {
      * @param property The {@link Property} object contains attributes
      */
     private static void processItems(Document document, Node itemsNode, Property property) {
+        if (property.getItems() == null) {
+            LOG.debug("no property items available");
+            return;
+        }
         for (Property propertyItem : property.getItems()) {
             Element optionNode = document.createElement(propertyItem.getField());
             optionNode.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
@@ -343,6 +351,8 @@ public class DialogUtils {
             return Constants.RESOURCE_TYPE_IMAGE;
         } else if (Property.FieldType.MULTIFIELD.equals(type)) {
             return Constants.RESOURCE_TYPE_MULTIFIELD;
+        } else if (Property.FieldType.HIDDEN_MULTIFIELD.equals(type)) {
+            return Constants.RESOURCE_TYPE_HIDDEN;
         } else if (Property.FieldType.UNKOWN.equals(type)) {
             // Support for not defined types. Model name will be the sling model field type
             return property.getTypeOriginal();

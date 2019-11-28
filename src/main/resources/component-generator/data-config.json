@@ -252,6 +252,33 @@
                         "content": "\t<p>@{label}: $${${sightly}Model.@{field} @ context=\"html\"}</p>"
                     }
                 }
+            },
+            {
+                "field": "hiddenMultifield",
+                "type": "hidden-multifield",
+                "model-name": "MyTextModel",
+                "javadoc": "Multifield not displayed in component dialog and can be used for parsys or other child components",
+                "use-existing-model": false,
+                "json-expose": true,
+                "attributes": {},
+                "items": [
+                    {
+                        "field": "text",
+                        "type": "hidden",
+                        "label": "TextItemTest",
+                        "attributes": {
+                            "value": "hidden value"
+                        },
+                        "description": "Interface type for used Parsys Components",
+                        "json-expose": true
+                    }
+                ],
+                "template": {
+                    "html": {
+                        "_comment_": "Template variables (@{...}) in values below means relative replacement to \"template\" parent path",
+                        "content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>${item.text}</p>\n\t</div>"
+                    }
+                }
             }
         ],
         "properties-shared": [

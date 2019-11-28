@@ -205,7 +205,11 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         }
 
         String fieldType = JavaCodeModel.getFieldType(property);
-        JClass narrowedClass = codeModel.ref(generationConfig.getProjectSettings().getModelInterfacePackage() + "." + modelClassName);
+        String absolutModelClassName =
+                JavaCodeModel.getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
+        LOG.debug("Use UseExistingModel [{}] for modelClassName [{}] and fieldType [{}] absolutModelClassName [{}]",
+                property.getUseExistingModel(), modelClassName, fieldType, absolutModelClassName);
+        JClass narrowedClass = codeModel.ref(absolutModelClassName);
         JClass fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
         JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
         jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class))
@@ -277,19 +281,25 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     }
 
     private void buildChildImplementation(List<Property> properties, String modelClassName) {
-        for (Property childProperty : properties) {
-            childProperty.setChildResource(true);
-        }
-        try {
-            JClass childInterfaceClass = codeModel.ref(generationConfig.getProjectSettings().getModelInterfacePackage() + "." + modelClassName);
-            JDefinedClass implClass = this.implPackage._class(modelClassName + "Impl")._implements(childInterfaceClass);
-            addSlingAnnotations(implClass, childInterfaceClass, null);
-            // Child properties are marked as ChildResource and can be handled properly later
-            addFieldVars(implClass, properties);
-            addGetters(implClass);
-            addExportedTypeMethod(implClass);
-        } catch (JClassAlreadyExistsException ex) {
-            LOG.error("Failed to generate child implementation classes.", ex);
+        if (properties != null && !properties.isEmpty()) {
+            for (Property childProperty : properties) {
+                childProperty.setChildResource(true);
+            }
+            try {
+                String absolutModelClassName = JavaCodeModel
+                        .getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
+                JClass childInterfaceClass = codeModel.ref(absolutModelClassName);
+                JDefinedClass implClass =
+                        this.implPackage._class(StringUtils.substringAfterLast(absolutModelClassName, ".") + "Impl")
+                                ._implements(childInterfaceClass);
+                addSlingAnnotations(implClass, childInterfaceClass, null);
+                // Child properties are marked as ChildResource and can be handled properly later
+                addFieldVars(implClass, properties);
+                addGetters(implClass);
+                addExportedTypeMethod(implClass);
+            } catch (JClassAlreadyExistsException ex) {
+                LOG.error("Failed to generate child implementation classes.", ex);
+            }
         }
     }
 

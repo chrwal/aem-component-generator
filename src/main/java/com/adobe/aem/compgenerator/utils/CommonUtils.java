@@ -21,6 +21,7 @@ package com.adobe.aem.compgenerator.utils;
 
 import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.exceptions.GeneratorException;
+import com.adobe.aem.compgenerator.javacodemodel.JavaCodeModel;
 import com.adobe.aem.compgenerator.javacodemodel.RollbackFileHandler;
 import com.adobe.aem.compgenerator.models.BaseModel;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
@@ -248,7 +249,10 @@ public class CommonUtils {
             map.put("name", generationConfig.getName());
             map.put("title", generationConfig.getTitle());
             map.put("sightly", StringUtils.uncapitalize(generationConfig.getJavaFormatedName()));
-            map.put("slingModel", generationConfig.getProjectSettings().getModelInterfacePackage() + "." + generationConfig.getJavaFormatedName());
+            String absolutModelClassName = JavaCodeModel
+                    .getFullyQualifiedModelClassName(generationConfig.getProjectSettings(),
+                            generationConfig.getJavaFormatedName());
+            map.put("slingModel", absolutModelClassName);
             map.put("CODEOWNER", generationConfig.getProjectSettings().getCodeOwner());
             if (generationConfig.getOptions().getReplaceValueMap() != null) {
                 map.putAll(generationConfig.getOptions().getReplaceValueMap());
