@@ -176,6 +176,7 @@ public class JavaCodeModel {
         } else if (type.equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
             return "java.util.List";
         } else if (type.equals(Property.FieldType.UNKOWN)) {
+            LOG.info("FieldType unkonwn for model name {}", property.getModelName());
             return property.getModelName();
         }
         return null;

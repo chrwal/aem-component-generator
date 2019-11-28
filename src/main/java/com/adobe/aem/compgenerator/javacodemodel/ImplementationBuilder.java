@@ -22,6 +22,7 @@ package com.adobe.aem.compgenerator.javacodemodel;
 import com.adobe.acs.commons.models.injectors.annotation.ChildResourceFromRequest;
 import com.adobe.acs.commons.models.injectors.annotation.SharedValueMapValue;
 import com.adobe.aem.compgenerator.Constants;
+import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.Property;
 import com.adobe.cq.export.json.ComponentExporter;
@@ -55,7 +56,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static com.sun.codemodel.JMod.PRIVATE;
 
@@ -78,15 +78,13 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * Construct a new Sling Model implementation class.
      *
-     * @param codeModel
-     * @param generationConfig
-     * @param className
-     * @param interfaceClass
+     * @param codeModel ..
+     * @param generationConfig ..
+     * @param className ..
+     * @param interfaceClass ..
      */
-    public ImplementationBuilder(JCodeModel codeModel,
-                                 GenerationConfig generationConfig,
-                                 String className,
-                                 JClass interfaceClass) {
+    ImplementationBuilder(JCodeModel codeModel, GenerationConfig generationConfig, String className,
+            JClass interfaceClass) {
         super(codeModel, generationConfig);
         this.className = className;
         this.interfaceClass = interfaceClass;
@@ -136,38 +134,45 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * adds fields to java model.
      *
-     * @param properties
+     * @param properties ..
      */
     private void addFieldVars(JDefinedClass jc, List<Property> properties) {
-        properties.stream()
-                .filter(Objects::nonNull)
-                .forEach(property -> addFieldVar(jc, property));
+        for (Property property : properties) {
+            if (property != null && StringUtils.isNotBlank(property.getField())) {
+                addFieldVar(jc, property);
+            }
+        }
     }
 
     /**
      * add field variable to to jc.
      *
-     * @param property
+     * @param property ..
      */
     private void addFieldVar(JDefinedClass jc, Property property) {
-        if (property != null && StringUtils.isNotBlank(property.getField())) {
-            boolean propertyIsMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
-            boolean propertyHasSeveralItems = property.getItems() != null && property.getItems().size() > 1;
-            if (propertyIsMultifield && propertyHasSeveralItems) {
-                addPropertyAsChildResource(jc, property);
-            } else {
-                addPropertyAsValueMap(jc, property);
-            }
+        LOG.debug("addFieldVar for property.getField [{}]", property.getField());
+        boolean propertyIsMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
+        boolean propertyIsHiddenMultifield = property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
+        boolean propertyHasSeveralItems = property.getItems() != null && property.getItems().size() > 1;
+        if ((propertyIsMultifield && propertyHasSeveralItems) || propertyIsHiddenMultifield) {
+            addPropertyAsChildResource(jc, property);
+        } else {
+            addPropertyAsValueMap(jc, property);
         }
     }
 
     /**
      * method that add the fieldname as private to jc.
      *
-     * @param property
+     * @param property ..
      */
     private void addPropertyAsValueMap(JDefinedClass jc, Property property) {
+        LOG.debug("addPropertyAsValueMap for property.getField [{}]", property.getField());
         String fieldType = JavaCodeModel.getFieldType(property);
+        if (fieldType == null) {
+            throw new GeneratorException(
+                    "fieldType null for property " + property.getModelName() + " field [" + property.getField() + "]");
+        }
 
         JClass fieldClass = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)
                 ? codeModel.ref(fieldType).narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0))))
@@ -222,7 +227,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * adds getters to all the fields available in the java class.
      *
-     * @param jc
+     * @param jc ..
      */
     private void addGetters(JDefinedClass jc) {
         Map<String, JFieldVar> fieldVars = jc.fields();
@@ -238,8 +243,8 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * add getter method for jFieldVar passed in.
      *
-     * @param jc
-     * @param jFieldVar
+     * @param jc ..
+     * @param jFieldVar ..
      */
     private void addGetter(JDefinedClass jc, JFieldVar jFieldVar) {
         JMethod getMethod = jc.method(JMod.PUBLIC, jFieldVar.type(), getMethodFormattedString(jFieldVar.name()));
@@ -270,7 +275,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * builds method name out of field variable.
      *
-     * @param fieldVariable
+     * @param fieldVariable ..
      * @return String returns formatted getter method name.
      */
     private String getMethodFormattedString(String fieldVariable) {

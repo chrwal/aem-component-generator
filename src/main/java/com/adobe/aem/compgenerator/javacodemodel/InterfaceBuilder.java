@@ -20,13 +20,13 @@
 package com.adobe.aem.compgenerator.javacodemodel;
 
 import com.adobe.aem.compgenerator.Constants;
+import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.Property;
 import com.adobe.aem.compgenerator.utils.CommonUtils;
 import com.adobe.cq.export.json.ComponentExporter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.codemodel.JClassAlreadyExistsException;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JDocComment;
@@ -40,7 +40,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.adobe.aem.compgenerator.javacodemodel.JavaCodeModel.getFieldType;
 import static com.sun.codemodel.JMod.NONE;
@@ -63,7 +62,7 @@ public class InterfaceBuilder extends JavaCodeBuilder {
      * @param generationConfig The {@link GenerationConfig generationConfig}
      * @param interfaceName    The name of the interface
      */
-    public InterfaceBuilder(JCodeModel codeModel, GenerationConfig generationConfig, String interfaceName) {
+    InterfaceBuilder(JCodeModel codeModel, GenerationConfig generationConfig, String interfaceName) {
         super(codeModel, generationConfig);
         this.interfaceClassName = interfaceName;
         this.isAllowExporting = generationConfig.getOptions().isAllowExporting();
@@ -81,6 +80,7 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                 + CommonUtils.getResourceType(generationConfig)
                 + "} component.";
 
+        LOG.debug("build interface for class [{}]", this.interfaceClassName);
         return buildInterface(this.interfaceClassName, comment, globalProperties, sharedProperties, privateProperties);
     }
 
@@ -92,10 +92,12 @@ public class InterfaceBuilder extends JavaCodeBuilder {
      */
     private void addGettersWithoutFields(JDefinedClass jc, List<Property> properties) {
         if (properties != null && !properties.isEmpty()) {
-            properties.stream()
-                    .filter(Objects::nonNull)
-                    .forEach(property -> {
-                        JMethod method = jc.method(NONE, getGetterMethodReturnType(property), Constants.STRING_GET + property.getFieldGetterName());
+            for (Property property : properties) {
+                if (property != null) {
+                    try {
+                        LOG.debug("build getter for property [{}]", property.getModelName());
+                        JMethod method = jc.method(NONE, getGetterMethodReturnType(property),
+                                Constants.STRING_GET + property.getFieldGetterName());
                         addJavadocToMethod(method, property);
 
                         if (this.isAllowExporting) {
@@ -109,11 +111,17 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                             }
                         }
 
-                        if (property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)
-                                && property.getItems().size() > 1) {
+                        if ((property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD) &&
+                                property.getItems().size() > 1) ||
+                                property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
                             buildMultifieldInterface(property);
                         }
-                    });
+                    } catch (Exception e) {
+                        LOG.error("Failed to generate getter for [" + property.getModelName() + "] getter [" +
+                                property.getFieldGetterName() + "]", e);
+                    }
+                }
+            }
         }
     }
 
@@ -147,8 +155,9 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                 }
             }
             return interfaceClass;
-        } catch (JClassAlreadyExistsException e) {
-            LOG.error("Failed to generate child interface.", e);
+        } catch (Exception e) {
+            LOG.error("Failed to generate child interface for '" + interfaceName + "' and comment '" + comment + "'.",
+                    e);
         }
 
         return null;
@@ -162,12 +171,19 @@ public class InterfaceBuilder extends JavaCodeBuilder {
      */
     private JType getGetterMethodReturnType(final Property property) {
         String fieldType = getFieldType(property);
-        if (property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)) {
-            if (property.getItems().size() == 1) {
+        if (fieldType == null) {
+            throw new GeneratorException("fieldType null for property " + property.getModelName());
+        }
+        LOG.debug("getGetterMethodReturnType for property {} with fieldType '{}'", property, fieldType);
+        final boolean isMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
+        final boolean isHiddenMultifield = property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
+        if (isMultifield || isHiddenMultifield) {
+            if (isMultifield && property.getItems().size() == 1) {
                 return codeModel.ref(fieldType).narrow(codeModel.ref(getFieldType(property.getItems().get(0))));
             } else {
                 String narrowedClassName = StringUtils.defaultString(property.getModelName(),
                         CaseUtils.toCamelCase(property.getField(), true) + "Multifield");
+                LOG.debug("narrowedClassName for ModelName {} with fieldType '{}'", property.getModelName(), fieldType);
                 return codeModel.ref(fieldType).narrow(codeModel.ref(narrowedClassName));
             }
         } else {
@@ -178,8 +194,8 @@ public class InterfaceBuilder extends JavaCodeBuilder {
     /**
      * Adds Javadoc to the method based on the information in the property and the generation config options.
      *
-     * @param method
-     * @param property
+     * @param method ..
+     * @param property ..
      */
     private void addJavadocToMethod(JMethod method, Property property) {
         String javadocStr = null;

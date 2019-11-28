@@ -3,7 +3,7 @@ const maven = require("maven");
 const path = require('path');
 
 const argv = require('optimist')
-    .usage('Generates AEM components.\nUsage: $0')
+    .usage('Generates AEM components.\nUsage workdir: $0')
     .default('workdir', '.')
     .describe('workdir', 'Relative path to script caller or absolute path of workdir')
     .demand('mvn-command')

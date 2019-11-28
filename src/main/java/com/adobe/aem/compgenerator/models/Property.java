@@ -30,14 +30,18 @@ public class Property implements BaseModel {
     public enum PropertyType {GLOBAL, SHARED, PRIVATE}
 
     public enum FieldType {
-        TEXTFIELD("textfield"), NUMBERFIELD("numberfield"), CHECKBOX("checkbox"), PATHFIELD("pathfield"),
-        TEXTAREA("textarea"), HIDDEN("hidden"), DATEPICKER("datepicker"), SELECT("select"), RADIOGROUP("radiogroup"), RADIO("radio"),
-        IMAGE("image"), MULTIFIELD("multifield"), UNKOWN("unkown"), EMPTY("");
+        TEXTFIELD("textfield", true), NUMBERFIELD("numberfield", true), CHECKBOX("checkbox", true),
+        PATHFIELD("pathfield", true), TEXTAREA("textarea", true), HIDDEN("hidden", true),
+        DATEPICKER("datepicker", true), SELECT("select", true), RADIOGROUP("radiogroup", true), RADIO("radio", false),
+        IMAGE("image", false), MULTIFIELD("multifield", false), HIDDEN_MULTIFIELD("hidden-multifield", false),
+        UNKOWN("unkown", true), EMPTY("", false);
 
         private final String fieldType;
+        private final boolean createNameAndLockable;
 
-        FieldType(String fieldType) {
+        FieldType(String fieldType, boolean createNameAndLockable) {
             this.fieldType = fieldType;
+            this.createNameAndLockable = createNameAndLockable;
         }
 
         public static FieldType valueForType(String type) {
@@ -58,6 +62,10 @@ public class Property implements BaseModel {
 
         public String toString() {
             return fieldType;
+        }
+
+        public boolean isCreateNameAndLockable() {
+            return createNameAndLockable;
         }
     }
 
