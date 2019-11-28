@@ -33,6 +33,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.FileWriter;
+import java.io.StringWriter;
 
 public class XMLUtils {
 
@@ -88,4 +89,26 @@ public class XMLUtils {
             throw new GeneratorException("Exception while DOM conversion to file : " + filePath, e);
         }
     }
+
+    /**
+     * Method will transform Document structure by prettify xml elements to writer. Can be handled with writer.toString()
+     *
+     * @param document The {@link Document} object
+     * @return
+     */
+    public static StringWriter transformDomToWriter(Document document) {
+        StringWriter writer = null;
+        try {
+            writer = new StringWriter();
+            DOMSource domSource = new DOMSource(document);
+            StreamResult result = new StreamResult(writer);
+            TransformerFactory tf = TransformerFactory.newInstance();
+            Transformer transformer = tf.newTransformer();
+            transformer.transform(domSource, result);
+        } catch (Exception e) {
+            throw new GeneratorException("Exception while DOM conversion to writer", e);
+        }
+        return writer;
+    }
+
 }

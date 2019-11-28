@@ -50,14 +50,16 @@ class EditConfigUtils {
      * @param cqEditConfig     The type of dialog to create (editConfig,childEidtConfig)
      * @param generationConfig The {@link GenerationConfig} object with all the populated values
      */
-    static void createEditConfigXml(GenerationConfig generationConfig, CqEditConfig cqEditConfig, String editConfigName,
+    static Document createEditConfigXml(GenerationConfig generationConfig, CqEditConfig cqEditConfig,
+            String editConfigName,
             String editConfigType) {
+        Document doc = null;
         if (cqEditConfig != null) {
             String dialogPath =
                     generationConfig.getCompDir() + "/" + StringUtils.replace(editConfigName, "cq:", "_cq_");
             try {
                 CommonUtils.createFolder(dialogPath);
-                Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+                doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
                 Element rootElement = createCqEditorRoot(doc, generationConfig, cqEditConfig, editConfigType);
 
                 doc.appendChild(rootElement);
@@ -66,6 +68,7 @@ class EditConfigUtils {
                 throw new GeneratorException("Exception while creating Dialog xml : " + dialogPath, e);
             }
         }
+        return doc;
     }
 
     /**

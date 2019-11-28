@@ -1,9 +1,7 @@
 package com.adobe.aem.compgenerator.utils;
 
-import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.models.CqEditConfig;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,19 +23,16 @@ class EditConfigUtilsTest {
         configFilePath = "/component-generator/data-config.json";
         configFile = new File(this.getClass().getResource(configFilePath).getFile());
         generationConfig = CommonUtils.getComponentData(configFile);
+        CommonUtils.updateCompDirFromConfig(generationConfig);
     }
 
     @Test
     void testCreateEditConfigXml() throws Exception {
         final CqEditConfig editConfigType = generationConfig.getOptions().getEditorConfig().getCqEditConfig();
-        EditConfigUtils.createEditConfigXml(generationConfig, editConfigType, EditConfigUtils.DIALOG_EDIT_CONFIG_NAME,
-                EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE);
-        String dialogPath = generationConfig.getCompDir() + "/" +
-                StringUtils.replace(EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE, "cq:", "_cq_");
-
-        Assertions.assertTrue(new File(dialogPath).exists());
-        final String filePath = dialogPath + "/" + Constants.FILENAME_CONTENT_XML;
-        final String stringFromFile = FileUtils.readFileToString(new File(filePath), "UTF-8");
+        final Document doc = EditConfigUtils
+                .createEditConfigXml(generationConfig, editConfigType, EditConfigUtils.DIALOG_EDIT_CONFIG_NAME,
+                        EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE);
+        String stringFromFile = XMLUtils.transformDomToWriter(doc).toString();
         Assertions.assertTrue(StringUtils
                         .contains(stringFromFile, "jcr:primaryType=\"" + EditConfigUtils.DIALOG_EDIT_CONFIG_TYPE + "\""),
                 stringFromFile);
@@ -55,15 +50,11 @@ class EditConfigUtilsTest {
     @Test
     void testCreateChildEditConfigXml() throws Exception {
         final CqEditConfig editConfigType = generationConfig.getOptions().getEditorConfig().getCqChildEditConfig();
-        EditConfigUtils
+        final Document doc = EditConfigUtils
                 .createEditConfigXml(generationConfig, editConfigType, EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_NAME,
                         EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_TYPE);
-        String dialogPath = generationConfig.getCompDir() + "/" +
-                StringUtils.replace(EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_TYPE, "cq:", "_cq_");
 
-        Assertions.assertTrue(new File(dialogPath).exists());
-        final String filePath = dialogPath + "/" + Constants.FILENAME_CONTENT_XML;
-        final String stringFromFile = FileUtils.readFileToString(new File(filePath), "UTF-8");
+        String stringFromFile = XMLUtils.transformDomToWriter(doc).toString();
         Assertions.assertTrue(StringUtils
                         .contains(stringFromFile, "jcr:primaryType=\"" + EditConfigUtils.DIALOG_CHILD_EDIT_CONFIG_TYPE + "\""),
                 stringFromFile);

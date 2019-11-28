@@ -62,10 +62,7 @@ public class AemCompGenerator {
                 throw new GeneratorException("Mandatory fields missing in the data-config.json !");
             }
 
-            String compDir = config.getProjectSettings().getAppsPath() + "/"
-                    + config.getProjectSettings().getComponentPath() + "/"
-                    + config.getType() + "/" + config.getName();
-            config.setCompDir(compDir);
+            CommonUtils.updateCompDirFromConfig(config);
 
             //builds component folder and file structure.
             ComponentUtils generatorUtils = new ComponentUtils(config);

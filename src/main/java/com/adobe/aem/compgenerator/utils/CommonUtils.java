@@ -262,4 +262,12 @@ public class CommonUtils {
             throw new GeneratorException("GenerationConfig generationConfig null");
         }
     }
+
+    public static void updateCompDirFromConfig(GenerationConfig config) {
+        String compDir =
+                config.getProjectSettings().getAppsPath() + "/" + config.getProjectSettings().getComponentPath() + "/" +
+                        config.getType() + "/" + config.getName();
+        config.setCompDir(compDir);
+    }
+
 }
