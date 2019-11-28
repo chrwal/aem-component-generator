@@ -1,17 +1,29 @@
+
 package com.adobe.aem.compgenerator.models;
 
+import java.util.HashMap;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"afterchildinsert", "aftercopy", "afterdelete", "afteredit", "afterinsert", "aftermove",
-        "beforechildinsert", "beforecopy", "beforedelete", "beforeedit", "beforeinsert", "beforemove"})
+@JsonPropertyOrder({
+    "afterchildinsert",
+    "aftercopy",
+    "afterdelete",
+    "afteredit",
+    "afterinsert",
+    "aftermove",
+    "beforechildinsert",
+    "beforecopy",
+    "beforedelete",
+    "beforeedit",
+    "beforeinsert",
+    "beforemove"
+})
 public class CqListeners {
 
     @JsonProperty("afterchildinsert")
@@ -162,58 +174,57 @@ public class CqListeners {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(CqListeners.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this)))
-                .append('[');
+        sb.append(CqListeners.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
         sb.append("afterchildinsert");
         sb.append('=');
-        sb.append(((this.afterchildinsert == null) ? "<null>" : this.afterchildinsert));
+        sb.append(((this.afterchildinsert == null)?"<null>":this.afterchildinsert));
         sb.append(',');
         sb.append("aftercopy");
         sb.append('=');
-        sb.append(((this.aftercopy == null) ? "<null>" : this.aftercopy));
+        sb.append(((this.aftercopy == null)?"<null>":this.aftercopy));
         sb.append(',');
         sb.append("afterdelete");
         sb.append('=');
-        sb.append(((this.afterdelete == null) ? "<null>" : this.afterdelete));
+        sb.append(((this.afterdelete == null)?"<null>":this.afterdelete));
         sb.append(',');
         sb.append("afteredit");
         sb.append('=');
-        sb.append(((this.afteredit == null) ? "<null>" : this.afteredit));
+        sb.append(((this.afteredit == null)?"<null>":this.afteredit));
         sb.append(',');
         sb.append("afterinsert");
         sb.append('=');
-        sb.append(((this.afterinsert == null) ? "<null>" : this.afterinsert));
+        sb.append(((this.afterinsert == null)?"<null>":this.afterinsert));
         sb.append(',');
         sb.append("aftermove");
         sb.append('=');
-        sb.append(((this.aftermove == null) ? "<null>" : this.aftermove));
+        sb.append(((this.aftermove == null)?"<null>":this.aftermove));
         sb.append(',');
         sb.append("beforechildinsert");
         sb.append('=');
-        sb.append(((this.beforechildinsert == null) ? "<null>" : this.beforechildinsert));
+        sb.append(((this.beforechildinsert == null)?"<null>":this.beforechildinsert));
         sb.append(',');
         sb.append("beforecopy");
         sb.append('=');
-        sb.append(((this.beforecopy == null) ? "<null>" : this.beforecopy));
+        sb.append(((this.beforecopy == null)?"<null>":this.beforecopy));
         sb.append(',');
         sb.append("beforedelete");
         sb.append('=');
-        sb.append(((this.beforedelete == null) ? "<null>" : this.beforedelete));
+        sb.append(((this.beforedelete == null)?"<null>":this.beforedelete));
         sb.append(',');
         sb.append("beforeedit");
         sb.append('=');
-        sb.append(((this.beforeedit == null) ? "<null>" : this.beforeedit));
+        sb.append(((this.beforeedit == null)?"<null>":this.beforeedit));
         sb.append(',');
         sb.append("beforeinsert");
         sb.append('=');
-        sb.append(((this.beforeinsert == null) ? "<null>" : this.beforeinsert));
+        sb.append(((this.beforeinsert == null)?"<null>":this.beforeinsert));
         sb.append(',');
         sb.append("beforemove");
         sb.append('=');
-        sb.append(((this.beforemove == null) ? "<null>" : this.beforemove));
+        sb.append(((this.beforemove == null)?"<null>":this.beforemove));
         sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
+        if (sb.charAt((sb.length()- 1)) == ',') {
+            sb.setCharAt((sb.length()- 1), ']');
         } else {
             sb.append(']');
         }
@@ -223,18 +234,18 @@ public class CqListeners {
     @Override
     public int hashCode() {
         int result = 1;
-        result = ((result * 31) + ((this.beforemove == null) ? 0 : this.beforemove.hashCode()));
-        result = ((result * 31) + ((this.aftermove == null) ? 0 : this.aftermove.hashCode()));
-        result = ((result * 31) + ((this.beforechildinsert == null) ? 0 : this.beforechildinsert.hashCode()));
-        result = ((result * 31) + ((this.beforedelete == null) ? 0 : this.beforedelete.hashCode()));
-        result = ((result * 31) + ((this.beforeedit == null) ? 0 : this.beforeedit.hashCode()));
-        result = ((result * 31) + ((this.afterchildinsert == null) ? 0 : this.afterchildinsert.hashCode()));
-        result = ((result * 31) + ((this.afteredit == null) ? 0 : this.afteredit.hashCode()));
-        result = ((result * 31) + ((this.afterinsert == null) ? 0 : this.afterinsert.hashCode()));
-        result = ((result * 31) + ((this.beforeinsert == null) ? 0 : this.beforeinsert.hashCode()));
-        result = ((result * 31) + ((this.aftercopy == null) ? 0 : this.aftercopy.hashCode()));
-        result = ((result * 31) + ((this.afterdelete == null) ? 0 : this.afterdelete.hashCode()));
-        result = ((result * 31) + ((this.beforecopy == null) ? 0 : this.beforecopy.hashCode()));
+        result = ((result* 31)+((this.beforemove == null)? 0 :this.beforemove.hashCode()));
+        result = ((result* 31)+((this.aftermove == null)? 0 :this.aftermove.hashCode()));
+        result = ((result* 31)+((this.beforechildinsert == null)? 0 :this.beforechildinsert.hashCode()));
+        result = ((result* 31)+((this.beforedelete == null)? 0 :this.beforedelete.hashCode()));
+        result = ((result* 31)+((this.beforeedit == null)? 0 :this.beforeedit.hashCode()));
+        result = ((result* 31)+((this.afterchildinsert == null)? 0 :this.afterchildinsert.hashCode()));
+        result = ((result* 31)+((this.afteredit == null)? 0 :this.afteredit.hashCode()));
+        result = ((result* 31)+((this.afterinsert == null)? 0 :this.afterinsert.hashCode()));
+        result = ((result* 31)+((this.beforeinsert == null)? 0 :this.beforeinsert.hashCode()));
+        result = ((result* 31)+((this.aftercopy == null)? 0 :this.aftercopy.hashCode()));
+        result = ((result* 31)+((this.afterdelete == null)? 0 :this.afterdelete.hashCode()));
+        result = ((result* 31)+((this.beforecopy == null)? 0 :this.beforecopy.hashCode()));
         return result;
     }
 
@@ -247,41 +258,18 @@ public class CqListeners {
             return false;
         }
         CqListeners rhs = ((CqListeners) other);
-        return (((((((((((((this.beforemove == rhs.beforemove) ||
-                ((this.beforemove != null) && this.beforemove.equals(rhs.beforemove))) &&
-                ((this.aftermove == rhs.aftermove) ||
-                        ((this.aftermove != null) && this.aftermove.equals(rhs.aftermove)))) &&
-                ((this.beforechildinsert == rhs.beforechildinsert) ||
-                        ((this.beforechildinsert != null) && this.beforechildinsert.equals(rhs.beforechildinsert)))) &&
-                ((this.beforedelete == rhs.beforedelete) ||
-                        ((this.beforedelete != null) && this.beforedelete.equals(rhs.beforedelete)))) &&
-                ((this.beforeedit == rhs.beforeedit) ||
-                        ((this.beforeedit != null) && this.beforeedit.equals(rhs.beforeedit)))) &&
-                ((this.afterchildinsert == rhs.afterchildinsert) ||
-                        ((this.afterchildinsert != null) && this.afterchildinsert.equals(rhs.afterchildinsert)))) &&
-                ((this.afteredit == rhs.afteredit) ||
-                        ((this.afteredit != null) && this.afteredit.equals(rhs.afteredit)))) &&
-                ((this.afterinsert == rhs.afterinsert) ||
-                        ((this.afterinsert != null) && this.afterinsert.equals(rhs.afterinsert)))) &&
-                ((this.beforeinsert == rhs.beforeinsert) ||
-                        ((this.beforeinsert != null) && this.beforeinsert.equals(rhs.beforeinsert)))) &&
-                ((this.aftercopy == rhs.aftercopy) ||
-                        ((this.aftercopy != null) && this.aftercopy.equals(rhs.aftercopy)))) &&
-                ((this.afterdelete == rhs.afterdelete) ||
-                        ((this.afterdelete != null) && this.afterdelete.equals(rhs.afterdelete)))) &&
-                ((this.beforecopy == rhs.beforecopy) ||
-                        ((this.beforecopy != null) && this.beforecopy.equals(rhs.beforecopy))));
+        return (((((((((((((this.beforemove == rhs.beforemove)||((this.beforemove!= null)&&this.beforemove.equals(rhs.beforemove)))&&((this.aftermove == rhs.aftermove)||((this.aftermove!= null)&&this.aftermove.equals(rhs.aftermove))))&&((this.beforechildinsert == rhs.beforechildinsert)||((this.beforechildinsert!= null)&&this.beforechildinsert.equals(rhs.beforechildinsert))))&&((this.beforedelete == rhs.beforedelete)||((this.beforedelete!= null)&&this.beforedelete.equals(rhs.beforedelete))))&&((this.beforeedit == rhs.beforeedit)||((this.beforeedit!= null)&&this.beforeedit.equals(rhs.beforeedit))))&&((this.afterchildinsert == rhs.afterchildinsert)||((this.afterchildinsert!= null)&&this.afterchildinsert.equals(rhs.afterchildinsert))))&&((this.afteredit == rhs.afteredit)||((this.afteredit!= null)&&this.afteredit.equals(rhs.afteredit))))&&((this.afterinsert == rhs.afterinsert)||((this.afterinsert!= null)&&this.afterinsert.equals(rhs.afterinsert))))&&((this.beforeinsert == rhs.beforeinsert)||((this.beforeinsert!= null)&&this.beforeinsert.equals(rhs.beforeinsert))))&&((this.aftercopy == rhs.aftercopy)||((this.aftercopy!= null)&&this.aftercopy.equals(rhs.aftercopy))))&&((this.afterdelete == rhs.afterdelete)||((this.afterdelete!= null)&&this.afterdelete.equals(rhs.afterdelete))))&&((this.beforecopy == rhs.beforecopy)||((this.beforecopy!= null)&&this.beforecopy.equals(rhs.beforecopy))));
     }
 
     public enum CqListenersBasicEvents {
 
-        REFRESH_SELF("REFRESH_SELF"), REFRESH_PAGE("REFRESH_PAGE");
+        REFRESH_SELF("REFRESH_SELF"),
+        REFRESH_PAGE("REFRESH_PAGE");
         private final String value;
-        private final static Map<String, CqListeners.CqListenersBasicEvents> CONSTANTS =
-                new HashMap<String, CqListeners.CqListenersBasicEvents>();
+        private final static Map<String, CqListeners.CqListenersBasicEvents> CONSTANTS = new HashMap<String, CqListeners.CqListenersBasicEvents>();
 
         static {
-            for (CqListeners.CqListenersBasicEvents c : values()) {
+            for (CqListeners.CqListenersBasicEvents c: values()) {
                 CONSTANTS.put(c.value, c);
             }
         }

@@ -1,3 +1,4 @@
+
 package com.adobe.aem.compgenerator.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
