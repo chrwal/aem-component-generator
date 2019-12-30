@@ -38,6 +38,7 @@ public class Constants {
     public static final String RESOURCE_TYPE_RADIOGROUP = "granite/ui/components/coral/foundation/form/radiogroup";
     public static final String RESOURCE_TYPE_SECTION = "granite/ui/components/foundation/section";
     public static final String RESOURCE_TYPE_SELECT = "granite/ui/components/coral/foundation/form/select";
+    public static final String RESOURCE_TYPE_SWITCH = "granite/ui/components/coral/foundation/form/switch";
     public static final String RESOURCE_TYPE_TABS = "granite/ui/components/coral/foundation/tabs";
     public static final String RESOURCE_TYPE_TEXTAREA = "granite/ui/components/coral/foundation/form/textarea";
     public static final String RESOURCE_TYPE_TEXTFIELD = "granite/ui/components/coral/foundation/form/textfield";

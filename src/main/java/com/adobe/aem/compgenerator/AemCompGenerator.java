@@ -24,10 +24,13 @@ import com.adobe.aem.compgenerator.javacodemodel.JavaCodeModel;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.utils.CommonUtils;
 import com.adobe.aem.compgenerator.utils.ComponentUtils;
+import com.adobe.aem.compgenerator.utils.TemplateUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Root of the AEM Component generator.
@@ -52,22 +55,23 @@ public class AemCompGenerator {
                 throw new GeneratorException("Config file missing / empty.");
             }
 
-            GenerationConfig config = CommonUtils.getComponentData(configFile);
+            //creates template structure
+            String configAfterTemplateInit = TemplateUtils
+                    .initConfigTemplates(FileUtils.readFileToString(new File(configPath), StandardCharsets.UTF_8));
 
-            if (config == null) {
-                throw new GeneratorException("Config file is empty / null !!");
-            }
+            //updates replacer value map from Templates
+            String configUpdateReplacerMap =
+                    TemplateUtils.updateReplaceValueMap(createGenerationConfig(configFile), configAfterTemplateInit);
 
-            if (!config.isValid() || !CommonUtils.isModelValid(config.getProjectSettings())) {
-                throw new GeneratorException("Mandatory fields missing in the data-config.json !");
-            }
+            FileUtils.writeStringToFile(new File("target/" + configPath), configUpdateReplacerMap,
+                    StandardCharsets.UTF_8);
+            configFile = new File("target/" + configPath);
 
-            CommonUtils.updateCompDirFromConfig(config);
+            GenerationConfig config = createGenerationConfig(configFile);
 
             //builds component folder and file structure.
             ComponentUtils generatorUtils = new ComponentUtils(config);
             generatorUtils.buildComponent(configFile.getPath());
-
 
             //builds sling model based on config.
             if (config.getOptions() != null && config.getOptions().isHasSlingModel()) {
@@ -77,5 +81,20 @@ public class AemCompGenerator {
         } catch (Exception e) {
             LOG.error("Failed to generate aem component.", e);
         }
+    }
+
+    public static GenerationConfig createGenerationConfig(File configFile) {
+        GenerationConfig config = CommonUtils.getComponentData(configFile);
+
+        if (config == null) {
+            throw new GeneratorException("Config file is empty / null !!");
+        }
+
+        if (!config.isValid() || !CommonUtils.isModelValid(config.getProjectSettings())) {
+            throw new GeneratorException("Mandatory fields missing in the data-config.json !");
+        }
+
+        CommonUtils.updateCompDirFromConfig(config);
+        return config;
     }
 }

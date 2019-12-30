@@ -36,7 +36,7 @@ class TemplateUtilsTest {
 
     @Test
     void testInitConfigTemplates() throws Exception {
-        String dataConfigJsonNew = TemplateUtils.initConfigTemplates(generationConfig, dataConfigJson);
+        String dataConfigJsonNew = TemplateUtils.initConfigTemplates(dataConfigJson);
         Assertions.assertNotEquals(dataConfigJson, dataConfigJsonNew);
 
         TemplateUtils.TemplateDefinition templateDefinition = new TemplateUtils.TemplateDefinition();
@@ -100,13 +100,28 @@ class TemplateUtilsTest {
     }
 
     @Test
+    void testSetDataToMultiyJsonByJsonPath() throws JsonProcessingException {
+        String testJson =
+                "{ \"root\" : { \"node1\" : [{ \"xml\" : \"asd\" } ]" + ", \"node2\" : [{ \"xml1\" : \"asd\" } ]} }";
+        String targetValue = "{\"showOnCreate\": \"{Boolean}true\"}";
+
+        String jsonPathToAdd = "$.root.['node1','node2'][*]";
+        String relativeJsonPath = "@.xml";
+        String newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath, targetValue);
+        Assertions.assertEquals(targetValue, TemplateUtils.readValuesFromJsonPath(newJson,
+                StringUtils.replace(relativeJsonPath, "@", TemplateUtils.unifyJasonPath(jsonPathToAdd)), null, true)
+                .get(0).getValue());
+    }
+
+    @Test
     void testSetDataToJsonByJsonPathObject() throws JsonProcessingException {
         String jsonPathToAdd = "$.root";
         String relativeJsonPath = "@";
-        String testJson = "{ \"html\" : { \"node1\" : \"asd\" } }";
+        String testJsonData = "{ \"root\" : { \"html\" : \"\"}}";
+        String testJsonValue = "{ \"html\" : { \"node1\" : \"asd\" } }";
 
-        String newJson = TemplateUtils.setDataToJsonByJsonPath(testJson, jsonPathToAdd, relativeJsonPath,
-                new ObjectMapper().readValue(testJson, Object.class));
+        String newJson = TemplateUtils.setDataToJsonByJsonPath(testJsonData, jsonPathToAdd, relativeJsonPath,
+                new ObjectMapper().readValue(testJsonValue, Object.class));
         Assertions.assertEquals("asd",
                 TemplateUtils.readValuesFromJsonPath(newJson, "$.root.html.node1", null, true).get(0).getValue());
     }

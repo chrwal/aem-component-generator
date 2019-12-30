@@ -30,9 +30,11 @@ public class Property implements BaseModel {
     public enum PropertyType {GLOBAL, SHARED, PRIVATE}
 
     public enum FieldType {
-        TEXTFIELD("textfield", true), NUMBERFIELD("numberfield", true), CHECKBOX("checkbox", true),
+        BUTTONGROUP("buttongroup", true), TEXTFIELD("textfield", true), NUMBERFIELD("numberfield", true),
+        CHECKBOX("checkbox", true),
         CONTAINER("container", false), PATHFIELD("pathfield", true), TEXTAREA("textarea", true), HIDDEN("hidden", true),
-        DATEPICKER("datepicker", true), SELECT("select", true), RADIOGROUP("radiogroup", true), RADIO("radio", false),
+        DATEPICKER("datepicker", true), SELECT("select", true), SWITCH("switch", true), RADIOGROUP("radiogroup", true),
+        RADIO("radio", false),
         IMAGE("image", false), MULTIFIELD("multifield", false), HIDDEN_MULTIFIELD("hidden-multifield", false),
         UNKOWN("unkown", true), EMPTY("", false);
 
@@ -75,6 +77,9 @@ public class Property implements BaseModel {
     @JsonProperty("field")
     private String field;
 
+    @JsonProperty("name")
+    private String name;
+
     @JsonProperty("type")
     private FieldType type;
 
@@ -109,6 +114,9 @@ public class Property implements BaseModel {
 
     @JsonProperty(value = "use-existing-model", defaultValue = "false")
     private boolean useExistingModel;
+
+    @JsonProperty(value = "use-existing-field", defaultValue = "false")
+    private boolean useExistingField;
 
     public PropertyType getPropertyType() {
         return propertyType;
@@ -146,6 +154,17 @@ public class Property implements BaseModel {
 
     public void setField(String field) {
         this.field = field;
+    }
+
+    public String getName() {
+        if (StringUtils.isBlank(name)) {
+            return getField();
+        }
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public FieldType getTypeAsFieldType() {
@@ -223,6 +242,14 @@ public class Property implements BaseModel {
 
     public void setUseExistingModel(boolean useExistingModel) {
         this.useExistingModel = useExistingModel;
+    }
+
+    public boolean getUseExistingField() {
+        return useExistingField;
+    }
+
+    public void setUseExistingField(boolean useExistingField) {
+        this.useExistingField = useExistingField;
     }
 
     public boolean isShouldExporterExpose() {

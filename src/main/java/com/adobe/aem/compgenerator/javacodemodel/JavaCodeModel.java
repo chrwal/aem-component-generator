@@ -88,6 +88,10 @@ public class JavaCodeModel {
         }
     }
 
+    JCodeModel getCodeModel() {
+        return codeModel;
+    }
+
     /**
      * Builds your slingModel interface with all required annotation,
      * fields and getters based on the <code>generationConfig</code>.
@@ -127,7 +131,8 @@ public class JavaCodeModel {
      * @return the sling model interface name
      */
     public static String getMultifieldInterfaceName(Property property) {
-        return StringUtils.defaultString(property.getModelName(), CaseUtils.toCamelCase(property.getField(), true) + "Multifield");
+        return StringUtils.defaultString(property.getModelName(),
+                CaseUtils.toCamelCase(property.getField(), true) + "Multifield");
     }
 
     /**
@@ -165,10 +170,10 @@ public class JavaCodeModel {
             return "java.lang.String";
         } else if (type.equals(Property.FieldType.NUMBERFIELD)) {
             return "java.lang.Long";
-        } else if (type.equals(Property.FieldType.CHECKBOX)) {
+        } else if (type.equals(Property.FieldType.CHECKBOX) || type.equals(Property.FieldType.SWITCH)) {
             return "java.lang.Boolean";
         } else if (type.equals(Property.FieldType.CONTAINER)) {
-            return "java.util.List";
+            return null;
         } else if (type.equals(Property.FieldType.DATEPICKER)) {
             return "java.util.Calendar";
         } else if (type.equals(Property.FieldType.IMAGE)) {

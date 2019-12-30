@@ -1,0 +1,69 @@
+{
+    "project-settings": {
+        "code-owner": "NewCo Incorporated",
+        "bundle-path": "target/test-sources/src/main/java",
+        "apps-path": "target/test-sources/ui.apps/src/main/content/jcr_root/apps",
+        "component-path": "newco/components",
+        "model-interface-pkg": "com.newco.aem.base.core.models",
+        "model-impl-pkg": "com.newco.aem.base.core.models.impl"
+    },
+    "name": "demo-comp",
+    "title": "Demo Component",
+    "group": "NewCo Base",
+    "type": "content",
+    "options": {
+        "js": true,
+        "jstxt": true,
+        "css": true,
+        "csstxt": true,
+        "html": true,
+        "slingmodel": true,
+        "content-exporter": false,
+        "model-adaptables": [
+            "request"
+        ],
+        "generic-javadoc": false,
+        "properties": [
+            {
+                "field": "containerOption1",
+                "type": "container",
+                "attributes": {
+                    "granite:class": "containerTest-showhide-target"
+                },
+                "granite:data": {
+                    "showhidetargetvalue": "containerOption1"
+                },
+                "items": [
+                    {
+                        "field": "jcrContainerColors1",
+                        "name": "jcr:containerColors1",
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    },
+                    {
+                        "field": "container1TextfieldTest",
+                        "type": "textfield",
+                        "label": "Container Textfield Test",
+                        "json-expose": true,
+                        "attributes": {}
+                    },
+                    {
+                        "field": "container1TextfieldTest",
+                        "use-existing-field": true,
+                        "type": "textfield",
+                        "label": "Second time allowed for a special container",
+                        "json-expose": true,
+                        "attributes": {}
+                    }
+                ]
+            }
+        ]
+    }
+}

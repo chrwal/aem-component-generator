@@ -1,20 +1,20 @@
 
 package com.adobe.aem.compgenerator.models;
 
+import java.util.HashMap;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public enum CqAction {
 
-    EDIT("edit"), DELETE("delete");
+    EDIT("edit"),
+    DELETE("delete");
     private final String value;
     private final static Map<String, CqAction> CONSTANTS = new HashMap<String, CqAction>();
 
     static {
-        for (CqAction c : values()) {
+        for (CqAction c: values()) {
             CONSTANTS.put(c.value, c);
         }
     }

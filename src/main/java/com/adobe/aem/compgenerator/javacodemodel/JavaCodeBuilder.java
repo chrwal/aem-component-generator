@@ -64,8 +64,7 @@ public abstract class JavaCodeBuilder {
     private static List<Property> filterProperties(Set<Property> occurredProperties, List<Property> originalProperties, Property.PropertyType propertyType) {
         List<Property> properties;
         if (originalProperties != null) {
-            properties = originalProperties.stream()
-                    .filter(Objects::nonNull)
+            properties = originalProperties.stream().filter(Objects::nonNull)
                     .filter(property -> StringUtils.isNotBlank(property.getField()))
                     .filter(property -> !property.getTypeAsFieldType().equals(Property.FieldType.EMPTY))
                     .filter(property -> !(occurredProperties.contains(property)))

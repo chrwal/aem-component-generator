@@ -22,7 +22,6 @@ package com.adobe.aem.compgenerator.javacodemodel;
 import com.adobe.acs.commons.models.injectors.annotation.ChildResourceFromRequest;
 import com.adobe.acs.commons.models.injectors.annotation.SharedValueMapValue;
 import com.adobe.aem.compgenerator.Constants;
-import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.Property;
 import com.adobe.cq.export.json.ComponentExporter;
@@ -61,6 +60,7 @@ import static com.sun.codemodel.JMod.PRIVATE;
 
 public class ImplementationBuilder extends JavaCodeBuilder {
     private static final Logger LOG = LogManager.getLogger(ImplementationBuilder.class);
+    private static final String INJECTION_NAME = "name";
     private static final String INJECTION_STRATEGY = "injectionStrategy";
     private static final String OPTIONAL_INJECTION_STRATEGY = "OPTIONAL";
     private static final String SLING_MODEL_EXPORTER_NAME = "SLING_MODEL_EXPORTER_NAME";
@@ -97,9 +97,9 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         JDefinedClass jc = this.implPackage._class(this.className)._implements(this.interfaceClass);
         addSlingAnnotations(jc, this.interfaceClass, resourceType);
 
-        addFieldVars(jc, globalProperties);
-        addFieldVars(jc, sharedProperties);
-        addFieldVars(jc, privateProperties);
+        addFieldVars(jc, globalProperties, false);
+        addFieldVars(jc, sharedProperties, false);
+        addFieldVars(jc, privateProperties, false);
 
         addGetters(jc);
         addExportedTypeMethod(jc);
@@ -135,10 +135,12 @@ public class ImplementationBuilder extends JavaCodeBuilder {
      * adds fields to java model.
      *
      * @param properties ..
+     * @param handleAsChildProperty
      */
-    private void addFieldVars(JDefinedClass jc, List<Property> properties) {
+    private void addFieldVars(JDefinedClass jc, List<Property> properties, boolean handleAsChildProperty) {
         for (Property property : properties) {
             if (property != null && StringUtils.isNotBlank(property.getField())) {
+                property.setChildResource(true);
                 addFieldVar(jc, property);
             }
         }
@@ -156,6 +158,8 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         boolean propertyHasSeveralItems = property.getItems() != null && property.getItems().size() > 1;
         if ((propertyIsMultifield && propertyHasSeveralItems) || propertyIsHiddenMultifield) {
             addPropertyAsChildResource(jc, property);
+        } else if (property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER)) {
+            addFieldVars(jc, property.getItems(), true);
         } else {
             addPropertyAsValueMap(jc, property);
         }
@@ -169,33 +173,34 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     private void addPropertyAsValueMap(JDefinedClass jc, Property property) {
         LOG.debug("addPropertyAsValueMap for property.getField [{}]", property.getField());
         String fieldType = JavaCodeModel.getFieldType(property);
-        if (fieldType == null) {
-            throw new GeneratorException(
-                    "fieldType null for property " + property.getModelName() + " field [" + property.getField() + "]");
+        if (fieldType != null) {
+            if (jc.fields().containsKey(property.getField()) && property.getUseExistingField()) {
+                return;
+            }
+            JClass fieldClass = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD) ?
+                    codeModel.ref(fieldType)
+                            .narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0)))) :
+                    codeModel.ref(fieldType);
+            JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
+
+            if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
+                jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+
+            } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
+                //Current implementation does not support child resources other than private
+                jFieldVar.annotate(codeModel.ref(ValueMapValue.class)).param(INJECTION_STRATEGY,
+                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+            } else {
+                jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class)).param(INJECTION_STRATEGY,
+                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+            }
+
+            setupFieldGetterAnnotations(jFieldVar, property);
         }
-
-        JClass fieldClass = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)
-                ? codeModel.ref(fieldType).narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0))))
-                : codeModel.ref(fieldType);
-        JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
-
-        if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
-            jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class))
-                    .param(INJECTION_STRATEGY,
-                            codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
-
-        } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
-            //Current implementation does not support child resources other than private
-            jFieldVar.annotate(codeModel.ref(ValueMapValue.class))
-                    .param(INJECTION_STRATEGY,
-                            codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
-        } else {
-            jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class))
-                    .param(INJECTION_STRATEGY,
-                            codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
-        }
-
-        setupFieldGetterAnnotations(jFieldVar, property);
     }
 
     /**
@@ -210,18 +215,19 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         }
 
         String fieldType = JavaCodeModel.getFieldType(property);
-        String absolutModelClassName =
-                JavaCodeModel.getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
-        LOG.debug("Use UseExistingModel [{}] for modelClassName [{}] and fieldType [{}] absolutModelClassName [{}]",
-                property.getUseExistingModel(), modelClassName, fieldType, absolutModelClassName);
-        JClass narrowedClass = codeModel.ref(absolutModelClassName);
-        JClass fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
-        JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
-        jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class))
-                .param(INJECTION_STRATEGY,
-                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
+        if (fieldType != null) {
+            String absolutModelClassName = JavaCodeModel
+                    .getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
+            LOG.debug("Use UseExistingModel [{}] for modelClassName [{}] and fieldType [{}] absolutModelClassName [{}]",
+                    property.getUseExistingModel(), modelClassName, fieldType, absolutModelClassName);
+            JClass narrowedClass = codeModel.ref(absolutModelClassName);
+            JClass fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
+            JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
+            jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
 
-        setupFieldGetterAnnotations(jFieldVar, property);
+            setupFieldGetterAnnotations(jFieldVar, property);
+        }
     }
 
     /**
@@ -287,9 +293,6 @@ public class ImplementationBuilder extends JavaCodeBuilder {
 
     private void buildChildImplementation(List<Property> properties, String modelClassName) {
         if (properties != null && !properties.isEmpty()) {
-            for (Property childProperty : properties) {
-                childProperty.setChildResource(true);
-            }
             try {
                 String absolutModelClassName = JavaCodeModel
                         .getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
@@ -299,7 +302,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
                                 ._implements(childInterfaceClass);
                 addSlingAnnotations(implClass, childInterfaceClass, null);
                 // Child properties are marked as ChildResource and can be handled properly later
-                addFieldVars(implClass, properties);
+                addFieldVars(implClass, properties, false);
                 addGetters(implClass);
                 addExportedTypeMethod(implClass);
             } catch (JClassAlreadyExistsException ex) {
@@ -330,4 +333,16 @@ public class ImplementationBuilder extends JavaCodeBuilder {
             method.body()._return(jFieldVar.invoke("getResourceType"));
         }
     }
+
+    private static String getAnnotationFieldName(GenerationConfig generationConfig, Property property) {
+        String nameForField = property.getName();
+        if (generationConfig.getOptions().isGroupFieldsByName()) {
+            nameForField = "./" + generationConfig.getName() + "/" + nameForField;
+        } else {
+            nameForField = "./" + nameForField;
+
+        }
+        return nameForField;
+    }
+
 }

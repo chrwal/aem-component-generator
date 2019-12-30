@@ -32,7 +32,7 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class TemplateUtils {
+public class TemplateUtils {
     private static final String TEMPLATE_DEFINITIONS = "$['template-definitions']";
     private static final String TEMPLATE_COPY_PATTERN_BEFORE = TEMPLATE_DEFINITIONS + "['copy-patterns']";
     private static final String TEMPLATE_FIELDS_WITH_PLACEHOLDERS =
@@ -40,7 +40,7 @@ class TemplateUtils {
     private static final String TEMPLATE_COLLECT_PATTERN_AFTER = TEMPLATE_DEFINITIONS + "['collect-patterns']";
     private static final Logger LOG = LogManager.getLogger(TemplateUtils.class);
 
-    static String initConfigTemplates(GenerationConfig generationConfig, String dataConfigJson) {
+    public static String initConfigTemplates(String dataConfigJson) {
         String dataConfigLoc = dataConfigJson;
         try {
             // Copy template pattern to json nodes e.g. json-data properties
@@ -49,20 +49,18 @@ class TemplateUtils {
             // Resolve JsonPath-Placeholders from copied template pattern
             dataConfigLoc = resolveRelativeJsonPathsInDataConfig(dataConfigLoc);
 
-            // Build a template replacer Map from JsonPath-Placeholders and set it to generationConfig
-            dataConfigLoc = resolveCollectPatternAfter(dataConfigLoc, TEMPLATE_COLLECT_PATTERN_AFTER,
-                    "$.['options'].['replaceValueMap']", generationConfig);
-
-            List<PathValueHolder<Object>> pathValueHolders =
-                    readValuesFromJsonPath(dataConfigLoc, "$.['options'].['replaceValueMap']", null, true);
-            Map valueMap = (Map) pathValueHolders.get(0).getValue();
-            LOG.trace("Found valueMap: " + valueMap.toString());
-            generationConfig.getOptions().setReplaceValueMap(valueMap);
-            LOG.trace("Data-config templating used: \n{}", dataConfigLoc);
         } catch (Exception e) {
             throw new GeneratorException("initConfigTemplates Error while init config templates" + dataConfigLoc, e);
         }
         return dataConfigLoc;
+    }
+
+    public static String updateReplaceValueMap(GenerationConfig generationConfig, String dataConfigJson) {
+        // Build a template replacer Map from JsonPath-Placeholders and set it to generationConfig
+        String dataConfigJsonNew = resolveCollectPatternAfter(dataConfigJson, TEMPLATE_COLLECT_PATTERN_AFTER,
+                "$.['options'].['replaceValueMap']", generationConfig);
+        LOG.trace("Data-config templating used: \n{}", dataConfigJson);
+        return dataConfigJsonNew;
     }
 
     static String getIntendedStringFromJson(Object dataConfig) {
@@ -99,7 +97,10 @@ class TemplateUtils {
             for (PathValueHolder<Object> replacerValue : readValuesFromJsonPath(dataConfig, replacerJsonPathValue, null,
                     false)) {
                 LOG.trace("Found Values: " + replacerValue.getValue().toString());
-                valuesfromReplacerJsonPathValue.add((String) replacerValue.getValue());
+                final String valueForCollection = (String) replacerValue.getValue();
+                if (StringUtils.isNotEmpty(valueForCollection)) {
+                    valuesfromReplacerJsonPathValue.add(valueForCollection);
+                }
             }
             String templatePlaceholders = StringUtils.join(valuesfromReplacerJsonPathValue, "\n");
             Map<String, String> stringsToReplaceValueMap = CommonUtils.getStringsToReplaceValueMap(generationConfig);
@@ -147,10 +148,9 @@ class TemplateUtils {
                         LOG.warn("Problem reading value empty for template Json path {} relativeJsonPath {}",
                                 templateParentPath, relativeJsonPath);
                     } else {
-                        String valueAsJsonFrom = (String) pathValueHolders.get(0).getValue();
-                        LOG.trace("put templateToken {} with value  {}", templateToken, valueAsJsonFrom);
-                        stringsToReplaceValueMap
-                                .put(StringUtils.substringBetween(templateToken, "{", "}"), valueAsJsonFrom);
+                        String tokenValue = (String) pathValueHolders.get(0).getValue();
+                        LOG.trace("put templateToken {} with value  {}", templateToken, tokenValue);
+                        stringsToReplaceValueMap.put(StringUtils.substringBetween(templateToken, "{", "}"), tokenValue);
                     }
                 }
                 StringSubstitutor stringSubstitutor = new StringSubstitutor(stringsToReplaceValueMap, "@{", "}");
@@ -245,34 +245,40 @@ class TemplateUtils {
      */
     static String setDataToJsonByJsonPath(String dataConfigJson, String jsonPathToAdd, String relativeJsonPath,
             Object targetValue) {
-        String targetPath = buildJasonPath(jsonPathToAdd, relativeJsonPath);
-        String parentAdded = StringUtils.substringBefore(targetPath, ".");
+        LOG.trace("dataConfigJson \n{}", dataConfigJson);
         DocumentContext jsonDoc = JsonPath.using(Configuration.builder().build()).parse(dataConfigJson);
-        String[] pathSegmentsAfterRoot =
-                StringUtils.split(StringUtils.substringAfter(targetPath, parentAdded + "."), ".");
-        for (String currentPathSegment : pathSegmentsAfterRoot) {
-            Object subscription = null;
-            String currentTargetPath = parentAdded + "." + currentPathSegment;
-            try {
-                subscription = jsonDoc.read(currentTargetPath);
-            } catch (Exception e) {
-                LOG.trace("Node {} not found", currentTargetPath);
-            }
-            if (subscription == null ||
-                    (subscription instanceof Collection && ((Collection) subscription).size() <= 0)) {
+        for (String pathsFromJsonPath : readPathsFromJsonPath(dataConfigJson, jsonPathToAdd, null, true)) {
+            String targetPath = buildJasonPath(pathsFromJsonPath, relativeJsonPath);
+            LOG.debug("Put Node targetPath {} pathsFromJsonPath {} currentPathSegment {} ", targetPath,
+                    pathsFromJsonPath, relativeJsonPath);
+            String parentAdded = StringUtils.substringBefore(targetPath, ".");
+            String[] pathSegmentsAfterRoot =
+                    StringUtils.split(StringUtils.substringAfter(targetPath, parentAdded + "."), ".");
+            for (String currentPathSegment : pathSegmentsAfterRoot) {
+                Object subscription = null;
+                String currentTargetPath = parentAdded + "." + currentPathSegment;
                 try {
-                    LOG.debug("Put Node parentAdded {} currentPathSegment {} ", parentAdded, currentPathSegment);
-                    jsonDoc = jsonDoc.put(parentAdded, currentPathSegment, new LinkedHashMap());
-                    LOG.trace("Change json parentAdded {} currentPathSegment {} ", parentAdded, currentPathSegment);
+                    subscription = jsonDoc.read(currentTargetPath);
                 } catch (Exception e) {
-                    throw new GeneratorException(
-                            "Error creating node " + currentPathSegment + " at " + parentAdded + " ", e);
+                    LOG.trace("Node {} not found", currentTargetPath);
                 }
+                if (subscription == null ||
+                        (subscription instanceof Collection && ((Collection) subscription).size() <= 0)) {
+                    try {
+                        LOG.debug("Put Node parentAdded {} currentPathSegment {} ", parentAdded, currentPathSegment);
+                        jsonDoc = jsonDoc.put(parentAdded, currentPathSegment, new LinkedHashMap());
+                        LOG.trace("Change json parentAdded {} currentPathSegment {} ", parentAdded, currentPathSegment);
+                    } catch (Exception e) {
+                        throw new GeneratorException(
+                                "Error creating node " + currentPathSegment + " at " + parentAdded + " ", e);
+                    }
+                }
+                parentAdded = currentTargetPath;
             }
-            parentAdded = currentTargetPath;
+            LOG.trace("Set at targetPath {} targetValue {}", targetPath, targetValue);
+            jsonDoc.set(targetPath, targetValue);
         }
-        LOG.trace("Set at targetPath {} targetValue {}", targetPath, targetValue);
-        return jsonDoc.set(targetPath, targetValue).jsonString();
+        return jsonDoc.jsonString();
     }
 
     private static String buildJasonPath(String jsonPathToAdd, String relativeJsonPath) {
@@ -411,5 +417,4 @@ class TemplateUtils {
             return value;
         }
     }
-
 }

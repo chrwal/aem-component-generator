@@ -19,6 +19,7 @@
         "html": true,
         "slingmodel": true,
         "content-exporter": false,
+        "group-fields-by-name": false,
         "model-adaptables": [
             "request"
         ],
@@ -161,6 +162,17 @@
                 ]
             },
             {
+                "field": "switchTest",
+                "type": "switch",
+                "label": "Switch value?",
+                "json-expose": true,
+                "attributes": {
+                    "checked": "{Boolean}true",
+                    "selected": "{Boolean}true",
+                    "value": "{Boolean}true"
+                }
+            },
+            {
                 "field": "hiddenTest",
                 "type": "hidden",
                 "attributes": {
@@ -279,6 +291,92 @@
                         "content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>${item.text}</p>\n\t</div>"
                     }
                 }
+            },
+            {
+                "field": "containerSelectTest",
+                "type": "select",
+                "label": "Container Select Test",
+                "attributes": {
+                    "granite:class": "cq-dialog-dropdown-showhide"
+                },
+                "granite:data": {
+                    "cq-dialog-dropdown-showhide-target": ".containerTest-showhide-target"
+                },
+                "items": [
+                    {
+                        "field": "containerOption1",
+                        "attributes": {
+                            "text": "Container Option 1",
+                            "value": "containerOption1"
+                        }
+                    },
+                    {
+                        "field": "containerOption2",
+                        "attributes": {
+                            "text": "Container Option 2",
+                            "value": "containerOption2"
+                        }
+                    }
+                ]
+            },
+            {
+                "field": "containerOption1",
+                "type": "container",
+                "attributes": {
+                    "granite:class": "containerTest-showhide-target"
+                },
+                "granite:data": {
+                    "showhidetargetvalue": "containerOption1"
+                },
+                "items": [
+                    {
+                        "field": "container1Colors",
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "field": "containerOption2",
+                "type": "container",
+                "attributes": {
+                    "granite:class": "containerTest-showhide-target"
+                },
+                "granite:data": {
+                    "showhidetargetvalue": "containerOption2"
+                },
+                "items": [
+                    {
+                        "field": "jcrTitel",
+                        "name": "jcr:titel",
+                        "type": "textfield",
+                        "label": "Titel read only",
+                        "json-expose": true,
+                        "attributes": {
+                            "disabled": "{Boolean}true"
+                        }
+                    },
+                    {
+                        "field": "container1Colors",
+                        "use-existing-field": true,
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    }
+                ]
             }
         ],
         "properties-shared": [
@@ -307,21 +405,28 @@
                 "_comment_": "Set component templates in the data-config.json tree. Using attributes see: <{sightly} ${template-html-attributes}>${template-html-content}</${sightly}>",
                 "baseJsonPath": "$.options",
                 "targetAttributes": {
-                    "@.template.html.component": "\t<!--/* Generated with data-config \"template-definitions\" */-->\n${template-html-content}",
-                    "@.template.html.bottom": "<sly data-sly-use.templates=\"core/wcm/components/commons/v1/templates.html\"\n\tdata-sly-call=\"${templates.placeholder @ isEmpty = !configured}\" />"
+                    "@.template.html.component": "<!--/* Generated with data-config \"template-definitions\" */-->\n${template-html-content}",
+                    "@.template.html.bottom": "<sly data-sly-use.templates=\"core/wcm/components/commons/v1/templates.html\"\n\tdata-sly-call=\"$${templates.placeholder @ isEmpty = !configured}\" />"
+                }
+            },
+            {
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][*][?(!(@.attributes.showOnCreate))]",
+                "warnMissingPaths": false,
+                "targetAttributes": {
+                    "@.attributes.cq:showOnCreate": "{Boolean}true"
                 }
             },
             {
                 "_comment_": "All properties with type multifield and no content is actually set get different content",
-                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'].[?((@.field) && (@.type == \"multifield\") && !(@.template.html.content))]",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.content))]..[?((@.field) && (@.type == \"multifield\" || @.type == \"hidden-multifield\") && (@.items[0].field) && !(@.template.html.content))]",
                 "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<div data-sly-list=\"$${${sightly}Model.@{field}}\">\n\t\t<p>@{label}: ${item}</p>\n\t</div>"
                 }
             },
             {
-                "_comment_": "All properties with type multifield  and no content is actually set get different content",
-                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'].[?((@.field) && (@.type == \"image\") && !(@.template.html.content))]",
+                "_comment_": "All properties with type image  and no content is actually set get different content",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.content))]..[?((@.field) && (@.type == \"image\") && !(@.template.html.content))]",
                 "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>@{label}: <img src=\"$${${sightly}Model.@{field}.src}\"/></p>"
@@ -329,7 +434,7 @@
             },
             {
                 "_comment_": "Apply default values for properties for content not already set",
-                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && (@.label) && !(@.template.html.content))]",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.content))]..[?((@.field) && (@.label) && !(@.template.html.content))]",
                 "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>@{label}: $${${sightly}Model.@{field}}</p>"
@@ -337,7 +442,15 @@
             },
             {
                 "_comment_": "Apply default values for properties for content not already set",
-                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && !(@.label) && !(@.template.html.content))]",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.content))]..[?((@.type == \"container\") && !(@.template.html.content))]",
+                "warnMissingPaths": false,
+                "targetAttributes": {
+                    "@.template.html.content": ""
+                }
+            },
+            {
+                "_comment_": "Apply default values for properties for content not already set",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.content))]..[?((@.field) && !(@.label) && !(@.type == \"container\") && !(@.template.html.content))]",
                 "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.template.html.content": "\t<p>$${${sightly}Model.@{field}}</p>"
@@ -345,10 +458,10 @@
             },
             {
                 "_comment_": "All properties with template.attribute",
-                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?((@.field) && !(@.template.html.attribute))]",
+                "baseJsonPath": "$.options.['properties','properties-shared','properties-global'][?(!(@.template.html.attribute))]..[?((@.field) && (@.template.html.isAttribute == true ) && !(@.template.html.attribute))]",
                 "warnMissingPaths": false,
                 "targetAttributes": {
-                    "@.template.html.attribute": "${template.attribute}=\"$${${sightly}Model.@{field}}\""
+                    "@.template.html.attribute": " @{field}=\"$${${sightly}Model.@{field}}\""
                 }
             }
         ],
@@ -363,9 +476,10 @@
                 "warnMissingPaths": false,
                 "targetAttributes": {
                     "@.options.replaceValueMap.template-html-component": "$.options.template.html.component",
-                    "@.options.replaceValueMap.template-html-content": "$.options['properties','properties-shared','properties-global'][?(@.template.html.content)].template.html.content",
-                    "@.options.replaceValueMap.template-html-attribute": "$.options['properties','properties-shared','properties-global'][?(@.template.html.attribute)].template.html.attribute",
-                    "@.options.replaceValueMap.template-html-bottom": "$.options.template.html.bottom"
+                    "@.options.replaceValueMap.template-html-content": "$.options['properties','properties-shared','properties-global']..[?(@.template.html.content)].template.html.content",
+                    "@.options.replaceValueMap.template-html-attribute": "$.options['properties','properties-shared','properties-global']..[?(@.template.html.attribute)].template.html.attribute",
+                    "@.options.replaceValueMap.template-html-bottom": "$.options.template.html.bottom",
+                    "@.options.replaceValueMap.template-name": "$.name"
                 }
             }
         ]

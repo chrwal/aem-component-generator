@@ -22,15 +22,12 @@ package com.adobe.aem.compgenerator.utils;
 import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 /**
@@ -60,10 +57,6 @@ public class ComponentUtils {
             throw new GeneratorException("Config file cannot be empty / null !!");
         }
         generationConfig.setConfigFilePath(configFilePath);
-
-        //creates template structure
-        TemplateUtils.initConfigTemplates(generationConfig,
-                FileUtils.readFileToString(new File(configFilePath), StandardCharsets.UTF_8));
 
         //creates base component folder.
         createFolderWithContentXML(generationConfig.getCompDir(), Constants.TYPE_CQ_COMPONENT, generationConfig);

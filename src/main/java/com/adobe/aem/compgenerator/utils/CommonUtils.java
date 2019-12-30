@@ -26,6 +26,7 @@ import com.adobe.aem.compgenerator.javacodemodel.RollbackFileHandler;
 import com.adobe.aem.compgenerator.models.BaseModel;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.OptionTemplateTxt;
+import com.adobe.aem.compgenerator.models.Property;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -268,6 +269,23 @@ public class CommonUtils {
                 config.getProjectSettings().getAppsPath() + "/" + config.getProjectSettings().getComponentPath() + "/" +
                         config.getType() + "/" + config.getName();
         config.setCompDir(compDir);
+    }
+
+    public static String getFieldFromPropertyJcrTranslated(Property property, boolean jcrTranslate) {
+        String field = property.getField();
+        if (StringUtils.startsWith(field, "_")) {
+            String firstSplit = StringUtils.substringAfter(field, "_");
+            String leftSplit = StringUtils.substringBefore(firstSplit, "_");
+            String rightSplit = StringUtils.substringAfter(firstSplit, "_");
+            if (StringUtils.isNotBlank(rightSplit)) {
+                if (jcrTranslate) {
+                    return leftSplit + ":" + rightSplit;
+                } else {
+                    return leftSplit + StringUtils.capitalize(rightSplit);
+                }
+            }
+        }
+        return field;
     }
 
 }

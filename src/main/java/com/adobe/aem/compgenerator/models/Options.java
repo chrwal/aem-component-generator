@@ -53,6 +53,9 @@ public class Options implements BaseModel {
     @JsonProperty("content-exporter")
     private boolean allowExporting;
 
+    @JsonProperty(value = "group-fields-by-name", defaultValue = "false")
+    private boolean groupFieldsByName;
+
     @JsonProperty("model-adaptables")
     private String[] modelAdaptables;
 
@@ -137,6 +140,14 @@ public class Options implements BaseModel {
         this.allowExporting = allowExporting;
     }
 
+    public boolean isGroupFieldsByName() {
+        return groupFieldsByName;
+    }
+
+    public void setGroupFieldsByName(boolean groupFieldsByName) {
+        this.groupFieldsByName = groupFieldsByName;
+    }
+
     public String[] getModelAdaptables() {
         if (ArrayUtils.isEmpty(modelAdaptables)) {
             return DEFAULT_ADAPTABLES;
@@ -192,5 +203,4 @@ public class Options implements BaseModel {
     public void setEditorConfig(EditorConfig editorConfig) {
         this.editorConfig = editorConfig;
     }
-
 }

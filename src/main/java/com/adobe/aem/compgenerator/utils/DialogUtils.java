@@ -57,9 +57,8 @@ public class DialogUtils {
             } else if (dialogType.equalsIgnoreCase(Constants.DIALOG_TYPE_SHARED)) {
                 properties = generationConfig.getOptions().getSharedProperties();
             }
-            Node rootNode = updateDefaultNodeStructure(doc, rootElement);
-            handleProperties(doc, rootNode, properties, true);
-
+            Node rootNode = updateDefaultNodeStructure(doc, rootElement, "content");
+            handleProperties(doc, rootNode, generationConfig, properties, true);
             doc.appendChild(rootElement);
             XMLUtils.transformDomToFile(doc, dialogPath + "/" + Constants.FILENAME_CONTENT_XML);
         } catch (Exception e) {
@@ -67,7 +66,8 @@ public class DialogUtils {
         }
     }
 
-    private static void handleProperties(Document document, Node rootNode, List<Property> properties,
+    private static void handleProperties(Document document, Node rootNode, GenerationConfig generationConfig,
+            List<Property> properties,
             boolean rederItemsNode) {
         if (properties != null && properties.size() > 0) {
             LOG.debug("handleProperties for element [{}] ", rootNode.getNodeName());
@@ -77,7 +77,7 @@ public class DialogUtils {
             }
             for (Property property : properties) {
                 if (property != null) {
-                    Element a = createPropertyNode(document, subNode, property);
+                    Element a = createPropertyNode(document, subNode, generationConfig, property);
                     if (a != null) {
                         subNode.appendChild(a);
                     }
@@ -117,12 +117,15 @@ public class DialogUtils {
      * Adds a dialog property xml node with all input attr under the document.
      *
      * @param document The {@link Document} object
+     * @param generationConfig ..
      * @param property The {@link Property} object contains attributes
      * @return Element
      */
-    private static Element createPropertyNode(Document document, Node currentNode, Property property) {
-        LOG.debug("createPropertyNode for node [{}] and property [{}]", currentNode.getNodeName(), property.getField());
-        Element propertyNode = document.createElement(property.getField());
+    private static Element createPropertyNode(Document document, Node currentNode, GenerationConfig generationConfig,
+            Property property) {
+        String propertyField = property.getField();
+        LOG.debug("createPropertyNode for node [{}] and property [{}]", currentNode.getNodeName(), propertyField);
+        Element propertyNode = document.createElement(propertyField);
 
         propertyNode.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
         setSlingResourceType(propertyNode, property);
@@ -130,15 +133,16 @@ public class DialogUtils {
         // Some of the properties are optional based on the different types available.
         addBasicProperties(propertyNode, property);
 
-        if (StringUtils.isNotEmpty(property.getField()) && property.getTypeAsFieldType() != null &&
+        String nameForField = getPropertyFieldName(generationConfig, property);
+        if (StringUtils.isNotEmpty(propertyField) && property.getTypeAsFieldType() != null &&
                 (property.getTypeAsFieldType().isCreateNameAndLockable()) &&
                 BooleanUtils.isNotTrue(property.isChildResource())) {
-            LOG.debug("createNameAndLockable for field [{}] and type [{}]", property.getField(),
+            LOG.debug("createNameAndLockable for field [{}] and type [{}]", propertyField,
                     property.getTypeAsFieldType());
-            propertyNode.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
-            propertyNode.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+            propertyNode.setAttribute(Constants.PROPERTY_NAME, nameForField);
+            propertyNode.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, nameForField);
         } else {
-            LOG.debug("No createNameAndLockable for field [{}] and type [{}] isChild [{}]", property.getField(),
+            LOG.debug("No createNameAndLockable for field [{}] and type [{}] isChild [{}]", nameForField,
                     property.getTypeAsFieldType(), property.isChildResource());
         }
         processAttributes(propertyNode, property);
@@ -146,21 +150,21 @@ public class DialogUtils {
 
         if (property.getItems() != null && !property.getItems().isEmpty()) {
             if (Property.FieldType.MULTIFIELD == property.getTypeAsFieldType()) {
-                handleMultifieldProperty(document, property, propertyNode);
+                handleMultifieldProperty(document, generationConfig, property, propertyNode);
             } else if (Property.FieldType.HIDDEN_MULTIFIELD == property.getTypeAsFieldType() ||
                     Property.FieldType.CONTAINER == property.getTypeAsFieldType()) {
-                handleProperties(document, propertyNode, property.getItems(), true);
+                handleProperties(document, propertyNode, generationConfig, property.getItems(), true);
             } else {
                 Node items = propertyNode.appendChild(createUnStructuredNode(document, "items"));
-                processItems(document, items, property);
+                processItems(document, generationConfig, items, property);
             }
         }
 
         if (Property.FieldType.IMAGE.equals(property.getTypeAsFieldType())) {
-            addImagePropertyValues(propertyNode, property);
+            addImagePropertyValues(propertyNode, generationConfig, property);
             currentNode.appendChild(propertyNode);
 
-            Element hiddenImageNode = document.createElement(property.getField() + "ResType");
+            Element hiddenImageNode = document.createElement(propertyField + "ResType");
             addImageHiddenProperyValues(hiddenImageNode, property);
             return hiddenImageNode;
         }
@@ -168,11 +172,23 @@ public class DialogUtils {
         return propertyNode;
     }
 
-    private static void handleMultifieldProperty(Document document, Property property, Element propertyNode) {
+    private static String getPropertyFieldName(GenerationConfig generationConfig, Property property) {
+        String nameForField = property.getName();
+        if (generationConfig.getOptions().isGroupFieldsByName()) {
+            nameForField = "./" + generationConfig.getName() + "/" + nameForField;
+        } else {
+            nameForField = "./" + nameForField;
+        }
+        return nameForField;
+    }
+
+    private static void handleMultifieldProperty(Document document, GenerationConfig generationConfig,
+            Property property, Element propertyNode) {
         Element field = document.createElement("field");
+        String nameForField = getPropertyFieldName(generationConfig, property);
         field.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-        field.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
-        field.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+        field.setAttribute(Constants.PROPERTY_NAME, nameForField);
+        field.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, nameForField);
         field.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_FIELDSET);
 
         if (property.getItems().size() == 1) {
@@ -192,8 +208,8 @@ public class DialogUtils {
 
             Element actualField = document.createElement("field");
             actualField.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
-            actualField.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField());
-            actualField.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField());
+            actualField.setAttribute(Constants.PROPERTY_NAME, nameForField);
+            actualField.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, nameForField);
 
             Property prop = property.getItems().get(0);
             setSlingResourceType(actualField, prop);
@@ -203,7 +219,7 @@ public class DialogUtils {
         } else {
             propertyNode.setAttribute(Constants.PROPERTY_COMPOSITE, "{Boolean}true");
             Node items = field.appendChild(createUnStructuredNode(document, "items"));
-            processItems(document, items, property);
+            processItems(document, generationConfig, items, property);
         }
 
         propertyNode.appendChild(field);
@@ -240,12 +256,13 @@ public class DialogUtils {
 
     /**
      * Process the dialog node item by setting property attributes on it.
-     *
-     * @param document The {@link Document} object
+     *  @param document The {@link Document} object
+     * @param generationConfig
      * @param itemsNode The {@link Node} object
      * @param property The {@link Property} object contains attributes
      */
-    private static void processItems(Document document, Node itemsNode, Property property) {
+    private static void processItems(Document document, GenerationConfig generationConfig, Node itemsNode,
+            Property property) {
         if (property.getItems() == null) {
             LOG.debug("no property items available");
             return;
@@ -259,7 +276,8 @@ public class DialogUtils {
             setSlingResourceType(optionNode, propertyItem);
 
             if (property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD)) {
-                optionNode.setAttribute(Constants.PROPERTY_NAME, "./" + propertyItem.getField());
+                String nameForField = getPropertyFieldName(generationConfig, property);
+                optionNode.setAttribute(Constants.PROPERTY_NAME, nameForField);
             }
 
             processAttributes(optionNode, propertyItem);
@@ -293,17 +311,19 @@ public class DialogUtils {
      * Adds the properties specific to the image node. These could all have been
      * included as attributes in the configuration json file, but they never/rarely
      * change, so hardcoding them here seems safe to do.
-     *
-     * @param imageNode The {@link Node} object
+     *  @param imageNode The {@link Node} object
+     * @param generationConfig
      * @param property The {@link Property} object contains attributes
      */
-    private static void addImagePropertyValues(Element imageNode, Property property) {
-        imageNode.setAttribute(Constants.PROPERTY_NAME, "./" + property.getField() + "/file");
-        imageNode.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, "./" + property.getField() + "/file");
+    private static void addImagePropertyValues(Element imageNode, GenerationConfig generationConfig,
+            Property property) {
+        String nameForField = getPropertyFieldName(generationConfig, property);
+        imageNode.setAttribute(Constants.PROPERTY_NAME, nameForField + "/file");
+        imageNode.setAttribute(Constants.PROPERTY_CQ_MSM_LOCKABLE, nameForField + "/file");
         imageNode.setAttribute("allowUpload", "{Boolean}false");
         imageNode.setAttribute("autoStart", "{Boolean}false");
         imageNode.setAttribute("class", "cq-droptarget");
-        imageNode.setAttribute("fileReferenceParameter", "./" + property.getField() + "/fileReference");
+        imageNode.setAttribute("fileReferenceParameter", nameForField + "/fileReference");
         imageNode.setAttribute("mimeTypes", "[image/gif,image/jpeg,image/png,image/webp,image/tiff,image/svg+xml]");
         imageNode.setAttribute("multiple", "{Boolean}false");
         imageNode.setAttribute("title", "Drag to select image");
@@ -330,10 +350,11 @@ public class DialogUtils {
      *
      * @param document The {@link Document} object
      * @param root The root node to append children nodes to
+     * @param content dialog content node
      * @return Node
      */
-    private static Node updateDefaultNodeStructure(Document document, Element root) {
-        Element containerElement = document.createElement("content");
+    private static Node updateDefaultNodeStructure(Document document, Element root, String content) {
+        Element containerElement = document.createElement(content);
         containerElement.setAttribute(Constants.JCR_PRIMARY_TYPE, Constants.NT_UNSTRUCTURED);
         containerElement.setAttribute(Constants.PROPERTY_SLING_RESOURCETYPE, Constants.RESOURCE_TYPE_CONTAINER);
 
@@ -391,6 +412,8 @@ public class DialogUtils {
             return Constants.RESOURCE_TYPE_DATEPICKER;
         } else if (Property.FieldType.SELECT.equals(type)) {
             return Constants.RESOURCE_TYPE_SELECT;
+        } else if (Property.FieldType.SWITCH.equals(type)) {
+            return Constants.RESOURCE_TYPE_SWITCH;
         } else if (Property.FieldType.RADIOGROUP.equals(type)) {
             return Constants.RESOURCE_TYPE_RADIOGROUP;
         } else if (Property.FieldType.RADIO.equals(type)) {

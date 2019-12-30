@@ -20,7 +20,6 @@
 package com.adobe.aem.compgenerator.javacodemodel;
 
 import com.adobe.aem.compgenerator.Constants;
-import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
 import com.adobe.aem.compgenerator.models.Property;
 import com.adobe.aem.compgenerator.utils.CommonUtils;
@@ -81,7 +80,8 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                 + "} component.";
 
         LOG.debug("build interface for class [{}]", this.interfaceClassName);
-        return buildInterface(this.interfaceClassName, comment, globalProperties, sharedProperties, privateProperties);
+        return buildInterface(this.interfaceClassName, null, comment, globalProperties, sharedProperties,
+                privateProperties);
     }
 
     /**
@@ -96,25 +96,33 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                 if (property != null) {
                     try {
                         LOG.debug("build getter for property [{}]", property.getModelName());
-                        JMethod method = jc.method(NONE, getGetterMethodReturnType(property),
-                                Constants.STRING_GET + property.getFieldGetterName());
-                        addJavadocToMethod(method, property);
-
-                        if (this.isAllowExporting) {
-                            if (!property.isShouldExporterExpose()) {
-                                method.annotate(codeModel.ref(JsonIgnore.class));
+                        final JType getterMethodReturnType = getGetterMethodReturnType(property);
+                        if (getterMethodReturnType != null) {
+                            final String methodName = Constants.STRING_GET + property.getFieldGetterName();
+                            if (jc.getMethod(methodName, new JType[]{}) != null && property.getUseExistingField()) {
+                                return;
                             }
+                            JMethod method = jc.method(NONE, getterMethodReturnType, methodName);
+                            addJavadocToMethod(method, property);
 
-                            if (StringUtils.isNotBlank(property.getJsonProperty())) {
-                                method.annotate(codeModel.ref(JsonProperty.class))
-                                        .param("value", property.getJsonProperty());
+                            if (this.isAllowExporting) {
+                                if (!property.isShouldExporterExpose()) {
+                                    method.annotate(codeModel.ref(JsonIgnore.class));
+                                }
+
+                                if (StringUtils.isNotBlank(property.getJsonProperty())) {
+                                    method.annotate(codeModel.ref(JsonProperty.class))
+                                            .param("value", property.getJsonProperty());
+                                }
                             }
                         }
 
                         if ((property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD) &&
                                 property.getItems().size() > 1) ||
                                 property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
-                            buildMultifieldInterface(property);
+                            buildMultifieldInterface(property, null);
+                        } else if (property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER)) {
+                            buildMultifieldInterface(property, jc);
                         }
                     } catch (Exception e) {
                         LOG.error("Failed to generate getter for [" + property.getModelName() + "] getter [" +
@@ -125,7 +133,7 @@ public class InterfaceBuilder extends JavaCodeBuilder {
         }
     }
 
-    private void buildMultifieldInterface(Property property) {
+    private void buildMultifieldInterface(Property property, JDefinedClass interfaceClass) {
         if (!property.getUseExistingModel()) {
             String modelInterfaceName = JavaCodeModel.getMultifieldInterfaceName(property);
             String childComment = "Defines the {@code "
@@ -134,27 +142,32 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                     + CommonUtils.getResourceType(generationConfig)
                     + "} component.";
 
-            buildInterface(modelInterfaceName, childComment, property.getItems());
+            buildInterface(modelInterfaceName, interfaceClass, childComment, property.getItems());
         }
     }
 
     @SafeVarargs
-    private final JDefinedClass buildInterface(String interfaceName, String comment, List<Property>... propertiesLists) {
+    private final JDefinedClass buildInterface(String interfaceName, JDefinedClass interfaceClass, String comment,
+            List<Property>... propertiesLists) {
         try {
-            JPackage jPackage = codeModel._package(generationConfig.getProjectSettings().getModelInterfacePackage());
-            JDefinedClass interfaceClass = jPackage._interface(interfaceName);
-            interfaceClass.javadoc().append(comment);
-            interfaceClass.annotate(codeModel.ref("org.osgi.annotation.versioning.ConsumerType"));
+            JDefinedClass interfaceClassLocal = interfaceClass;
+            if (interfaceClass == null) {
+                JPackage jPackage =
+                        codeModel._package(generationConfig.getProjectSettings().getModelInterfacePackage());
+                interfaceClassLocal = jPackage._interface(interfaceName);
+                interfaceClassLocal.javadoc().append(comment);
+                interfaceClassLocal.annotate(codeModel.ref("org.osgi.annotation.versioning.ConsumerType"));
 
-            if (this.isAllowExporting) {
-                interfaceClass._extends(codeModel.ref(ComponentExporter.class));
+                if (this.isAllowExporting) {
+                    interfaceClassLocal._extends(codeModel.ref(ComponentExporter.class));
+                }
             }
             if (propertiesLists != null) {
                 for (List<Property> properties : propertiesLists) {
-                    addGettersWithoutFields(interfaceClass, properties);
+                    addGettersWithoutFields(interfaceClassLocal, properties);
                 }
             }
-            return interfaceClass;
+            return interfaceClassLocal;
         } catch (Exception e) {
             LOG.error("Failed to generate child interface for '" + interfaceName + "' and comment '" + comment + "'.",
                     e);
@@ -171,24 +184,26 @@ public class InterfaceBuilder extends JavaCodeBuilder {
      */
     private JType getGetterMethodReturnType(final Property property) {
         String fieldType = getFieldType(property);
-        if (fieldType == null) {
-            throw new GeneratorException("fieldType null for property " + property.getModelName());
-        }
-        LOG.debug("getGetterMethodReturnType for property {} with fieldType '{}'", property, fieldType);
-        final boolean isMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
-        final boolean isHiddenMultifield = property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
-        if (isMultifield || isHiddenMultifield) {
-            if (isMultifield && property.getItems().size() == 1) {
-                return codeModel.ref(fieldType).narrow(codeModel.ref(getFieldType(property.getItems().get(0))));
+        if (fieldType != null) {
+            LOG.debug("getGetterMethodReturnType for property {} with fieldType '{}'", property, fieldType);
+            final boolean isMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
+            final boolean isHiddenMultifield =
+                    property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
+            if (isMultifield || isHiddenMultifield) {
+                if (isMultifield && property.getItems().size() == 1) {
+                    return codeModel.ref(fieldType).narrow(codeModel.ref(getFieldType(property.getItems().get(0))));
+                } else {
+                    String narrowedClassName = StringUtils.defaultString(property.getModelName(),
+                            CaseUtils.toCamelCase(property.getField(), true) + "Multifield");
+                    LOG.debug("narrowedClassName for ModelName {} with fieldType '{}'", property.getModelName(),
+                            fieldType);
+                    return codeModel.ref(fieldType).narrow(codeModel.ref(narrowedClassName));
+                }
             } else {
-                String narrowedClassName = StringUtils.defaultString(property.getModelName(),
-                        CaseUtils.toCamelCase(property.getField(), true) + "Multifield");
-                LOG.debug("narrowedClassName for ModelName {} with fieldType '{}'", property.getModelName(), fieldType);
-                return codeModel.ref(fieldType).narrow(codeModel.ref(narrowedClassName));
+                return codeModel.ref(fieldType);
             }
-        } else {
-            return codeModel.ref(fieldType);
         }
+        return null;
     }
 
     /**
@@ -198,6 +213,10 @@ public class InterfaceBuilder extends JavaCodeBuilder {
      * @param property ..
      */
     private void addJavadocToMethod(JMethod method, Property property) {
+        JType getterMethodReturnType = getGetterMethodReturnType(property);
+        if (getterMethodReturnType == null) {
+            return;
+        }
         String javadocStr = null;
         if (StringUtils.isNotBlank(property.getJavadoc())) {
             javadocStr = property.getJavadoc();
@@ -207,7 +226,7 @@ public class InterfaceBuilder extends JavaCodeBuilder {
         if (StringUtils.isNotBlank(javadocStr)) {
             JDocComment javadoc = method.javadoc();
             javadoc.append(javadocStr).append("");
-            javadoc.append("\n\n@return " + StringEscapeUtils.escapeHtml4(getGetterMethodReturnType(property).name()));
+            javadoc.append("\n\n@return " + StringEscapeUtils.escapeHtml4(getterMethodReturnType.name()));
         }
     }
 }
