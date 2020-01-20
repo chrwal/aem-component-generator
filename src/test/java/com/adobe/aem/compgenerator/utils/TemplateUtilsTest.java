@@ -26,12 +26,26 @@ class TemplateUtilsTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        configFilePath = "/component-generator/data-config.json";
+        setUpDataConfig("/component-generator/data-config.json");
+    }
+
+    private void setUpDataConfig(String dataConfig) throws IOException {
+        configFilePath = dataConfig;
         configFile = new File(this.getClass().getResource(configFilePath).getFile());
         generationConfig = CommonUtils.getComponentData(configFile);
         generationConfig.setConfigFilePath(configFilePath);
         dataConfigJson = FileUtils.readFileToString(configFile, StandardCharsets.UTF_8);
+    }
 
+    @Test
+    void testInitConfigWithoutTemplates() {
+        try {
+            setUpDataConfig("/component-generator/data-config-noTemplateTest.json");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String dataConfigJsonNew = TemplateUtils.initConfigTemplates(dataConfigJson);
+        Assertions.assertEquals(dataConfigJson, dataConfigJsonNew);
     }
 
     @Test

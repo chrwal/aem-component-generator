@@ -43,12 +43,18 @@ public class TemplateUtils {
     public static String initConfigTemplates(String dataConfigJson) {
         String dataConfigLoc = dataConfigJson;
         try {
+            if (isTemplateAvailable(dataConfigLoc)) {
+                return dataConfigLoc;
+            }
             // Copy template pattern to json nodes e.g. json-data properties
             dataConfigLoc = bringTemplateValuesInDataConfig(dataConfigJson, TEMPLATE_COPY_PATTERN_BEFORE);
 
             // Resolve JsonPath-Placeholders from copied template pattern
-            dataConfigLoc = resolveRelativeJsonPathsInDataConfig(dataConfigLoc);
-
+            List<PathValueHolder<Object>> templatePlaceholders =
+                    readValuesFromJsonPath(dataConfigLoc, TEMPLATE_FIELDS_WITH_PLACEHOLDERS, null, false);
+            if (!templatePlaceholders.isEmpty()) {
+                dataConfigLoc = resolveRelativeJsonPathsInDataConfig(dataConfigLoc, templatePlaceholders);
+            }
         } catch (Exception e) {
             throw new GeneratorException("initConfigTemplates Error while init config templates" + dataConfigLoc, e);
         }
@@ -56,11 +62,23 @@ public class TemplateUtils {
     }
 
     public static String updateReplaceValueMap(GenerationConfig generationConfig, String dataConfigJson) {
+        if (isTemplateAvailable(dataConfigJson)) {
+            return dataConfigJson;
+        }
         // Build a template replacer Map from JsonPath-Placeholders and set it to generationConfig
         String dataConfigJsonNew = resolveCollectPatternAfter(dataConfigJson, TEMPLATE_COLLECT_PATTERN_AFTER,
                 "$.['options'].['replaceValueMap']", generationConfig);
         LOG.trace("Data-config templating used: \n{}", dataConfigJson);
         return dataConfigJsonNew;
+    }
+
+    private static boolean isTemplateAvailable(String dataConfigLoc) {
+        final List<String> pathsFound = readPathsFromJsonPath(dataConfigLoc, TEMPLATE_DEFINITIONS, null, false);
+        if (pathsFound.isEmpty()) {
+            LOG.debug("Template definitions not used");
+            return true;
+        }
+        return false;
     }
 
     static String getIntendedStringFromJson(Object dataConfig) {
@@ -120,14 +138,17 @@ public class TemplateUtils {
      * Example: <p>@{label}: ${${sightly}Model.@{field}}</p> becomes <p>@{label}: ${${sightly}Model.textfieldTest}</p>
      *
      * @param dataConfig ..
+     * @param templatePlaceholders
      * @return changed dataConfig
      * @throws IOException ..
      */
-    private static String resolveRelativeJsonPathsInDataConfig(String dataConfig) throws IOException {
+    private static String resolveRelativeJsonPathsInDataConfig(String dataConfig,
+            List<PathValueHolder<Object>> templatePlaceholders) throws IOException {
         Map<String, String> stringsToReplaceValueMap = new LinkedHashMap<>();
-        String templateFinder =
-                (String) readValuesFromJsonPath(dataConfig, TEMPLATE_FIELDS_WITH_PLACEHOLDERS, null, false).get(0)
-                        .getValue();
+        if (templatePlaceholders.isEmpty()) {
+            return null;
+        }
+        String templateFinder = (String) templatePlaceholders.get(0).getValue();
         for (PathValueHolder<Object> objectPathValueHolder : readValuesFromJsonPath(dataConfig, templateFinder, null,
                 true)) {
             String templateJasonPath = unifyJasonPath(objectPathValueHolder.getPath());

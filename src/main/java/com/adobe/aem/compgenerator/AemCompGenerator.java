@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Root of the AEM Component generator.
- *
+ * <p>
  * AemCompGenerator reads the json data file input and creates folder, file
  * structure of an AEM component and sling model interface with member values
  * and getters.
@@ -59,13 +59,14 @@ public class AemCompGenerator {
             String configAfterTemplateInit = TemplateUtils
                     .initConfigTemplates(FileUtils.readFileToString(new File(configPath), StandardCharsets.UTF_8));
 
-            //updates replacer value map from Templates
-            String configUpdateReplacerMap =
-                    TemplateUtils.updateReplaceValueMap(createGenerationConfig(configFile), configAfterTemplateInit);
-
-            FileUtils.writeStringToFile(new File("target/" + configPath), configUpdateReplacerMap,
-                    StandardCharsets.UTF_8);
-            configFile = new File("target/" + configPath);
+            if (configAfterTemplateInit != null) {
+                //updates replacer value map from Templates
+                String configUpdateReplacerMap = TemplateUtils
+                        .updateReplaceValueMap(createGenerationConfig(configFile), configAfterTemplateInit);
+                FileUtils.writeStringToFile(new File("target/" + configPath), configUpdateReplacerMap,
+                        StandardCharsets.UTF_8);
+                configFile = new File("target/" + configPath);
+            }
 
             GenerationConfig config = createGenerationConfig(configFile);
 
