@@ -185,11 +185,13 @@ public class ComponentUtils {
      * Create default HTML file based the provided template.
      */
     private void createHtl() {
-        try {
-            CommonUtils.createFileWithCopyRight(generationConfig.getCompDir()
-                    + "/" + generationConfig.getName() + ".html", generationConfig);
-        } catch (Exception e) {
-            throw new GeneratorException("Exception while creating HTML : " + generationConfig.getCompDir(), e);
+        if (generationConfig.getOptions().isHasHtml()) {
+            try {
+                CommonUtils.createFileWithCopyRight(
+                        generationConfig.getCompDir() + "/" + generationConfig.getName() + ".html", generationConfig);
+            } catch (Exception e) {
+                throw new GeneratorException("Exception while creating HTML : " + generationConfig.getCompDir(), e);
+            }
         }
     }
 }
