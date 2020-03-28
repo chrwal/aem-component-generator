@@ -161,31 +161,11 @@ public class JavaCodeModel {
      */
     public static String getFieldType(Property property) {
         Property.FieldType type = property.getTypeAsFieldType();
-        if (type.equals(Property.FieldType.TEXTFIELD)
-                || type.equals(Property.FieldType.PATHFIELD)
-                || type.equals(Property.FieldType.TEXTAREA)
-                || type.equals(Property.FieldType.HIDDEN)
-                || type.equals(Property.FieldType.SELECT)
-                || type.equals(Property.FieldType.RADIOGROUP)) {
-            return "java.lang.String";
-        } else if (type.equals(Property.FieldType.NUMBERFIELD)) {
-            return "java.lang.Long";
-        } else if (type.equals(Property.FieldType.CHECKBOX) || type.equals(Property.FieldType.SWITCH)) {
-            return "java.lang.Boolean";
-        } else if (type.equals(Property.FieldType.CONTAINER)) {
-            return null;
-        } else if (type.equals(Property.FieldType.DATEPICKER)) {
-            return "java.util.Calendar";
-        } else if (type.equals(Property.FieldType.IMAGE)) {
-            return "com.adobe.cq.wcm.core.components.models.Image";
-        } else if (type.equals(Property.FieldType.MULTIFIELD)) {
+        if (type.equals(Property.FieldType.MULTIFIELD) || type.equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
             return "java.util.List";
-        } else if (type.equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
-            return "java.util.List";
-        } else if (type.equals(Property.FieldType.UNKOWN)) {
-            LOG.info("FieldType unkonwn for model name {}", property.getModelName());
-            return property.getModelName();
+        } else if (type.equals(Property.FieldType.UNKNOWN)) {
+            LOG.info("FieldType unknown for model name [{}] field [{}]", property.getModelName(), property.getField());
         }
-        return null;
+        return StringUtils.defaultString(property.getModelName(), type.getDefaultModelType());
     }
 }

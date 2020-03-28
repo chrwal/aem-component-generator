@@ -26,12 +26,7 @@ import com.adobe.aem.compgenerator.utils.CommonUtils;
 import com.adobe.cq.export.json.ComponentExporter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.codemodel.JCodeModel;
-import com.sun.codemodel.JDefinedClass;
-import com.sun.codemodel.JDocComment;
-import com.sun.codemodel.JMethod;
-import com.sun.codemodel.JPackage;
-import com.sun.codemodel.JType;
+import com.sun.codemodel.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 import org.apache.commons.text.StringEscapeUtils;
@@ -93,7 +88,7 @@ public class InterfaceBuilder extends JavaCodeBuilder {
     private void addGettersWithoutFields(JDefinedClass jc, List<Property> properties) {
         if (properties != null && !properties.isEmpty()) {
             for (Property property : properties) {
-                if (property != null) {
+                if (property != null && !property.getUseExistingField()) {
                     try {
                         LOG.debug("build getter for property [{}]", property.getModelName());
                         final JType getterMethodReturnType = getGetterMethodReturnType(property);
@@ -122,7 +117,11 @@ public class InterfaceBuilder extends JavaCodeBuilder {
                                 property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD)) {
                             buildMultifieldInterface(property, null);
                         } else if (property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER)) {
-                            buildMultifieldInterface(property, jc);
+                            if (StringUtils.isNotBlank(property.getModelName())) {
+                                buildMultifieldInterface(property, null);
+                            } else {
+                                buildMultifieldInterface(property, jc);
+                            }
                         }
                     } catch (Exception e) {
                         LOG.error("Failed to generate getter for [" + property.getModelName() + "] getter [" +

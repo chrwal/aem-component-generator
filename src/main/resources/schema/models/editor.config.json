@@ -1,5 +1,14 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "cq:editConfig": {
+            "$ref": "#/definitions/cq:editConfig"
+        },
+        "cq:childEditConfig": {
+            "$ref": "#/definitions/cq:editConfig"
+        }
+    },
     "definitions": {
         "cq:editConfig": {
             "type": "object",
@@ -13,6 +22,7 @@
                         "type": "string",
                         "enum": [
                             "edit",
+                            "insert",
                             "delete"
                         ]
                     }
@@ -69,15 +79,6 @@
                 "REFRESH_SELF",
                 "REFRESH_PAGE"
             ]
-        }
-    },
-    "type": "object",
-    "properties": {
-        "cq:editConfig": {
-            "$ref": "#/definitions/cq:editConfig"
-        },
-        "cq:childEditConfig": {
-            "$ref": "#/definitions/cq:editConfig"
         }
     }
 }

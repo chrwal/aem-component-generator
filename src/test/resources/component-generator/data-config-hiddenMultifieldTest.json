@@ -1,0 +1,92 @@
+{
+    "project-settings": {
+        "code-owner": "NewCo Incorporated",
+        "bundle-path": "target/test-sources/src/main/java",
+        "apps-path": "target/test-sources/ui.apps/src/main/content/jcr_root/apps",
+        "component-path": "newco/components",
+        "model-interface-pkg": "com.newco.aem.base.core.models.hiddenMultifield",
+        "model-impl-pkg": "com.newco.aem.base.core.models.hiddenMultifield.impl"
+    },
+    "name": "demo-comp-HiddenMultifieldTest",
+    "title": "Demo Hidden Multifield",
+    "group": "NewCo Base",
+    "type": "content",
+    "options": {
+        "js": true,
+        "jstxt": true,
+        "css": true,
+        "csstxt": true,
+        "html": true,
+        "slingmodel": true,
+        "content-exporter": false,
+        "model-adaptables": [
+            "request"
+        ],
+        "generic-javadoc": false,
+        "properties": [
+            {
+                "field": "hiddenMultifield1Item",
+                "type": "hidden-multifield",
+                "items": [
+                    {
+                        "field": "jcrContainerColors1Item",
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "field": "hiddenMultifieldMoreThan1Items",
+                "type": "hidden-multifield",
+                "items": [
+                    {
+                        "field": "jcrContainerColorsMoreThan1Items",
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    },
+                    {
+                        "field": "container1TextfieldTestMoreThan1Items",
+                        "type": "textfield",
+                        "label": "Container Textfield Test",
+                        "json-expose": true,
+                        "attributes": {}
+                    }
+                ]
+            },
+            {
+                "field": "hiddenMultifieldUseExsitingModelTrue",
+                "type": "hidden-multifield",
+                "model-name": "com.adobe.aem.compgenerator.javacodemodel.ExistingModel",
+                "use-existing-model": true,
+                "items": [
+                    {
+                        "field": "jcrContainerColors1UseExsitingModelTrue",
+                        "type": "multifield",
+                        "label": "ContainerColors",
+                        "json-expose": true,
+                        "items": [
+                            {
+                                "type": "textfield",
+                                "label": "Color"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

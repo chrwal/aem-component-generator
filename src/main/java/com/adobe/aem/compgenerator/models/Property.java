@@ -30,20 +30,35 @@ public class Property implements BaseModel {
     public enum PropertyType {GLOBAL, SHARED, PRIVATE}
 
     public enum FieldType {
-        BUTTONGROUP("buttongroup", true), TEXTFIELD("textfield", true), NUMBERFIELD("numberfield", true),
-        CHECKBOX("checkbox", true),
-        CONTAINER("container", false), PATHFIELD("pathfield", true), TEXTAREA("textarea", true), HIDDEN("hidden", true),
-        DATEPICKER("datepicker", true), SELECT("select", true), SWITCH("switch", true), RADIOGROUP("radiogroup", true),
-        RADIO("radio", false),
-        IMAGE("image", false), MULTIFIELD("multifield", false), HIDDEN_MULTIFIELD("hidden-multifield", false),
-        UNKOWN("unkown", true), EMPTY("", false);
+        BUTTONGROUP("buttongroup", true, false, null),
+        TEXTFIELD("textfield", true, false, "java.lang.String"),
+        NUMBERFIELD("numberfield", true, false, "java.lang.Long"),
+        CHECKBOX("checkbox", true, false, "java.lang.Boolean"),
+        CONTAINER("container", false, true, null),
+        PATHFIELD("pathfield", true, false, "java.lang.String"),
+        TEXTAREA("textarea", true, false, "java.lang.String"),
+        HIDDEN("hidden", true, true, "java.lang.String"),
+        DATEPICKER("datepicker", true, false, "java.util.Calendar"),
+        SELECT("select", true, false, "java.lang.String"),
+        SWITCH("switch", true, false, "java.lang.Boolean"),
+        RADIOGROUP("radiogroup", true, false, "java.lang.String"),
+        RADIO("radio", false, false, null),
+        IMAGE("image", false, false, "com.adobe.cq.wcm.core.components.models.Image"),
+        MULTIFIELD("multifield", false, false, "java.util.List"),
+        HIDDEN_MULTIFIELD("hidden-multifield", false, true, "java.util.List"),
+        UNKNOWN("unknown", true, false, null),
+        EMPTY("", false, false, null);
 
         private final String fieldType;
         private final boolean createNameAndLockable;
+        private final boolean handleItemsAsJcrProperties;
+        private final String defaultModelType;
 
-        FieldType(String fieldType, boolean createNameAndLockable) {
+        FieldType(String fieldType, boolean createNameAndLockable, boolean handleItemsAsJcrProperties, String defaultModelType) {
             this.fieldType = fieldType;
             this.createNameAndLockable = createNameAndLockable;
+            this.handleItemsAsJcrProperties = handleItemsAsJcrProperties;
+            this.defaultModelType = defaultModelType;
         }
 
         public static FieldType valueForType(String type) {
@@ -55,7 +70,7 @@ public class Property implements BaseModel {
                     return value;
                 }
             }
-            return UNKOWN;
+            return UNKNOWN;
         }
 
         public String getFieldType() {
@@ -69,52 +84,46 @@ public class Property implements BaseModel {
         public boolean isCreateNameAndLockable() {
             return createNameAndLockable;
         }
+
+        public boolean isHandleItemsAsJcrProperties() {
+            return handleItemsAsJcrProperties;
+        }
+
+        public String getDefaultModelType() {
+            return defaultModelType;
+        }
     }
 
     private Property.PropertyType propertyType;
     private boolean isChildResource = false;
-
     @JsonProperty("field")
     private String field;
-
     @JsonProperty("name")
     private String name;
-
     @JsonProperty("type")
     private FieldType type;
-
     private String typeOriginal;
-
     @JsonProperty("label")
     private String label;
-
     @JsonProperty("description")
     private String description;
-
     @JsonProperty("javadoc")
     private String javadoc;
-
     @JsonProperty("json-property")
     private String jsonProperty;
-
     @JsonProperty("json-expose")
     private boolean shouldExporterExpose;
-
     @JsonProperty("attributes")
     private Map<String, String> attributes;
-
     @JsonProperty(value = "items")
     private List<Property> items;
-
     @JsonProperty("granite:data")
     private Map<String, String> graniteDate;
 
     @JsonProperty(value = "model-name")
     private String modelName;
-
     @JsonProperty(value = "use-existing-model", defaultValue = "false")
     private boolean useExistingModel;
-
     @JsonProperty(value = "use-existing-field", defaultValue = "false")
     private boolean useExistingField;
 
@@ -138,7 +147,8 @@ public class Property implements BaseModel {
         if (StringUtils.isNotBlank(field)) {
             return field;
         } else if (StringUtils.isNoneBlank(label)) {
-            return CaseUtils.toCamelCase(label.replaceAll("[^A-Za-z0-9+]", " "), false);
+            return CaseUtils.toCamelCase(label.replaceAll("[^A-Za-z0-9+]", " "),
+                    false);
         }
         return field;
     }
@@ -147,7 +157,8 @@ public class Property implements BaseModel {
         if (StringUtils.isNotBlank(field)) {
             return StringUtils.capitalize(field);
         } else if (StringUtils.isNoneBlank(label)) {
-            return CaseUtils.toCamelCase(label.replaceAll("[^A-Za-z0-9+]", " "), true);
+            return CaseUtils.toCamelCase(label.replaceAll("[^A-Za-z0-9+]", " "),
+                    true);
         }
         return field;
     }

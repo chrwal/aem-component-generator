@@ -8,11 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.logging.log4j.LogManager;
@@ -22,12 +18,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,7 +34,7 @@ public class TemplateUtils {
     public static String initConfigTemplates(String dataConfigJson) {
         String dataConfigLoc = dataConfigJson;
         try {
-            if (isTemplateAvailable(dataConfigLoc)) {
+            if (!isTemplateAvailable(dataConfigLoc)) {
                 return dataConfigLoc;
             }
             // Copy template pattern to json nodes e.g. json-data properties
@@ -62,7 +53,7 @@ public class TemplateUtils {
     }
 
     public static String updateReplaceValueMap(GenerationConfig generationConfig, String dataConfigJson) {
-        if (isTemplateAvailable(dataConfigJson)) {
+        if (!isTemplateAvailable(dataConfigJson)) {
             return dataConfigJson;
         }
         // Build a template replacer Map from JsonPath-Placeholders and set it to generationConfig
@@ -76,9 +67,9 @@ public class TemplateUtils {
         final List<String> pathsFound = readPathsFromJsonPath(dataConfigLoc, TEMPLATE_DEFINITIONS, null, false);
         if (pathsFound.isEmpty()) {
             LOG.debug("Template definitions not used");
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     static String getIntendedStringFromJson(Object dataConfig) {
@@ -120,7 +111,7 @@ public class TemplateUtils {
                     valuesfromReplacerJsonPathValue.add(valueForCollection);
                 }
             }
-            String templatePlaceholders = StringUtils.join(valuesfromReplacerJsonPathValue, "\n");
+            String templatePlaceholders = StringUtils.join(valuesfromReplacerJsonPathValue, "");
             Map<String, String> stringsToReplaceValueMap = CommonUtils.getStringsToReplaceValueMap(generationConfig);
             LOG.trace("Replace common placeholders within template placeholders:\n{} \nMap:\n{}" + templatePlaceholders,
                     stringsToReplaceValueMap.toString());

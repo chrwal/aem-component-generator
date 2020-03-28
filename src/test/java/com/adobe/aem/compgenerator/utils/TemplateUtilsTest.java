@@ -49,17 +49,6 @@ class TemplateUtilsTest {
     }
 
     @Test
-    void testInitConfigTemplates() throws Exception {
-        String dataConfigJsonNew = TemplateUtils.initConfigTemplates(dataConfigJson);
-        Assertions.assertNotEquals(dataConfigJson, dataConfigJsonNew);
-
-        TemplateUtils.TemplateDefinition templateDefinition = new TemplateUtils.TemplateDefinition();
-        Assertions.assertFalse(templateDefinition.isValid());
-        templateDefinition.setbaseJsonPath("asd");
-        Assertions.assertTrue(templateDefinition.isValid());
-    }
-
-    @Test
     void testReadValuesFromJsonPath() {
         String testJson = "{ \"root\" : { \"node1\" : \"zui\" ,  \"node2\" : \"asd\" ,  \"node3\" : \"rtz}\" } }";
         List<TemplateUtils.PathValueHolder<Map>> copySourceBefore =
@@ -165,8 +154,8 @@ class TemplateUtilsTest {
                 "\"targetAttributes\": { \"@.options.replaceValueMap.content\" : \"$.nodes..[?(@.content)].content\" }" +
             "}]";
         String options =
-            "\"options\" : {}";
-        String optionsExpected = "\"options\" : { \"replaceValueMap\" : { \"content\" : \"" + content1Expected + "\n" + content2 + "\" } } }" ;
+                "\"options\" : {}";
+        String optionsExpected = "\"options\" : { \"replaceValueMap\" : { \"content\" : \"" + content1Expected + "" + content2 + "\" } } }";
         //@formatter:on
         String testJson = "{" + nodes + "," + patterns + "," + options + "}";
         String expectJson = "{" + nodes + "," + patterns + "," + optionsExpected + "}";

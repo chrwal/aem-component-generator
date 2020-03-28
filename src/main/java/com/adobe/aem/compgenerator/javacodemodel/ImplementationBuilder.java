@@ -28,18 +28,7 @@ import com.adobe.cq.export.json.ComponentExporter;
 import com.adobe.cq.export.json.ExporterConstants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.codemodel.JAnnotationArrayMember;
-import com.sun.codemodel.JAnnotationUse;
-import com.sun.codemodel.JClass;
-import com.sun.codemodel.JClassAlreadyExistsException;
-import com.sun.codemodel.JCodeModel;
-import com.sun.codemodel.JDefinedClass;
-import com.sun.codemodel.JExpr;
-import com.sun.codemodel.JExpression;
-import com.sun.codemodel.JFieldVar;
-import com.sun.codemodel.JMethod;
-import com.sun.codemodel.JMod;
-import com.sun.codemodel.JPackage;
+import com.sun.codemodel.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +60,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     private final JPackage implPackage;
     private final String[] adaptables;
     private final boolean isAllowExporting;
+    private final boolean isAllowExportingExportedType;
 
     private Map<String, Boolean> fieldJsonExposeMap = new HashMap<>();
     private Map<String, String> fieldJsonPropertyMap = new HashMap<>();
@@ -91,6 +81,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         this.implPackage = codeModel._package(generationConfig.getProjectSettings().getModelImplPackage());
         this.adaptables = generationConfig.getOptions().getModelAdaptables();
         this.isAllowExporting = generationConfig.getOptions().isAllowExporting();
+        this.isAllowExportingExportedType = generationConfig.getOptions().isAllowExportingTypeField();
     }
 
     public void build(String resourceType) throws JClassAlreadyExistsException {
@@ -154,9 +145,12 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     private void addFieldVar(JDefinedClass jc, Property property) {
         LOG.debug("addFieldVar for property.getField [{}]", property.getField());
         boolean propertyIsMultifield = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD);
-        boolean propertyIsHiddenMultifield = property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
         boolean propertyHasSeveralItems = property.getItems() != null && property.getItems().size() > 1;
-        if ((propertyIsMultifield && propertyHasSeveralItems) || propertyIsHiddenMultifield) {
+        boolean propertyIsHiddenMultifield = property.getTypeAsFieldType().equals(Property.FieldType.HIDDEN_MULTIFIELD);
+        boolean containerTypeWithModelName = property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER) &&
+                StringUtils.isNotBlank(property.getModelName());
+
+        if ((propertyIsMultifield && propertyHasSeveralItems) || propertyIsHiddenMultifield || containerTypeWithModelName) {
             addPropertyAsChildResource(jc, property);
         } else if (property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER)) {
             addFieldVars(jc, property.getItems(), true);
@@ -173,34 +167,32 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     private void addPropertyAsValueMap(JDefinedClass jc, Property property) {
         LOG.debug("addPropertyAsValueMap for property.getField [{}]", property.getField());
         String fieldType = JavaCodeModel.getFieldType(property);
-        if (fieldType != null) {
-            if (jc.fields().containsKey(property.getField()) && property.getUseExistingField()) {
-                return;
-            }
-            JClass fieldClass = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD) ?
-                    codeModel.ref(fieldType)
-                            .narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0)))) :
-                    codeModel.ref(fieldType);
-            JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
-
-            if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
-                jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
-                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
-
-            } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
-                //Current implementation does not support child resources other than private
-                jFieldVar.annotate(codeModel.ref(ValueMapValue.class)).param(INJECTION_STRATEGY,
-                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
-            } else {
-                jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class)).param(INJECTION_STRATEGY,
-                        codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                        .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
-            }
-
-            setupFieldGetterAnnotations(jFieldVar, property);
+        if (property.getUseExistingField() || fieldType == null) {
+            return;
         }
+        JClass fieldClass = property.getTypeAsFieldType().equals(Property.FieldType.MULTIFIELD) ?
+                codeModel.ref(fieldType)
+                        .narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0)))) :
+                codeModel.ref(fieldType);
+        JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
+
+        if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
+            jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+
+        } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
+            //Current implementation does not support child resources other than private
+            jFieldVar.annotate(codeModel.ref(ValueMapValue.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+        } else {
+            jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
+                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+        }
+
+        setupFieldGetterAnnotations(jFieldVar, property);
     }
 
     /**
@@ -220,8 +212,13 @@ public class ImplementationBuilder extends JavaCodeBuilder {
                     .getFullyQualifiedModelClassName(generationConfig.getProjectSettings(), modelClassName);
             LOG.debug("Use UseExistingModel [{}] for modelClassName [{}] and fieldType [{}] absolutModelClassName [{}]",
                     property.getUseExistingModel(), modelClassName, fieldType, absolutModelClassName);
-            JClass narrowedClass = codeModel.ref(absolutModelClassName);
-            JClass fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
+            JClass fieldClass;
+            if (property.getTypeAsFieldType().equals(Property.FieldType.CONTAINER)) {
+                fieldClass = codeModel.ref(fieldType);
+            } else {
+                JClass narrowedClass = codeModel.ref(absolutModelClassName);
+                fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
+            }
             JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
             jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
                     codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
@@ -330,7 +327,11 @@ public class ImplementationBuilder extends JavaCodeBuilder {
             jFieldVar.annotate(codeModel.ref(SlingObject.class));
             JMethod method = jc.method(JMod.PUBLIC, codeModel.ref(String.class), "getExportedType");
             method.annotate(codeModel.ref(Override.class));
-            method.body()._return(jFieldVar.invoke("getResourceType"));
+            if (this.isAllowExportingExportedType) {
+                method.body()._return(jFieldVar.invoke("getResourceType"));
+            } else {
+                method.body()._return(JExpr._null());
+            }
         }
     }
 

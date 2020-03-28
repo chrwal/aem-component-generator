@@ -4,10 +4,10 @@
         "bundle-path": "target/test-sources/src/main/java",
         "apps-path": "target/test-sources/ui.apps/src/main/content/jcr_root/apps",
         "component-path": "newco/components",
-        "model-interface-pkg": "com.newco.aem.base.core.models",
-        "model-impl-pkg": "com.newco.aem.base.core.models.impl"
+        "model-interface-pkg": "com.newco.aem.base.core.models.container",
+        "model-impl-pkg": "com.newco.aem.base.core.models.container.impl"
     },
-    "name": "demo-comp",
+    "name": "demo-comp-containerTest",
     "title": "Demo Component",
     "group": "NewCo Base",
     "type": "content",
@@ -32,6 +32,9 @@
                 },
                 "granite:data": {
                     "showhidetargetvalue": "containerOption1"
+                },
+                "layout": {
+                    "type": "container"
                 },
                 "items": [
                     {
@@ -61,6 +64,53 @@
                         "label": "Second time allowed for a special container",
                         "json-expose": true,
                         "attributes": {}
+                    },
+                    {
+                        "field": "container1FieldNotInModel",
+                        "type": "hidden",
+                        "use-existing-field": true,
+                        "attributes": {
+                            "text": "Container Field NotInModel because of 'use-existing-field'",
+                            "value": "container1FieldNotInModel"
+                        }
+                    },
+                    {
+                        "field": "container1CustomModeName",
+                        "type": "hidden",
+                        "model-name": "com.adobe.aem.compgenerator.javacodemodel.EmptyInterface",
+                        "json-expose": true,
+                        "attributes": {
+                            "text": "Container Field with hidden Field with custom mode name'",
+                            "value": "container1CustomModeName"
+                        }
+                    }
+                ]
+            },
+            {
+                "field": "containerUseExsitingModelTrue",
+                "type": "container",
+                "model-name": "com.adobe.aem.compgenerator.javacodemodel.ExistingModel",
+                "use-existing-model": true,
+                "items": [
+                    {
+                        "field": "text1UseExsitingModelFalse",
+                        "type": "textfield",
+                        "label": "ContainerColors",
+                        "json-expose": true
+                    }
+                ]
+            },
+            {
+                "field": "containerUseExsitingModelFalse",
+                "type": "container",
+                "model-name": "ExistingModelFalse",
+                "use-existing-model": false,
+                "items": [
+                    {
+                        "field": "text1UseExsitingModelFalse",
+                        "type": "textfield",
+                        "label": "ContainerColors",
+                        "json-expose": true
                     }
                 ]
             }

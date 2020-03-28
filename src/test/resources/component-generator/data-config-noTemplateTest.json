@@ -7,7 +7,7 @@
         "model-interface-pkg": "com.newco.aem.base.core.models",
         "model-impl-pkg": "com.newco.aem.base.core.models.impl"
     },
-    "name": "demo-comp",
+    "name": "demo-comp-noTemplateTest",
     "title": "Demo Component",
     "group": "NewCo Base",
     "type": "content",

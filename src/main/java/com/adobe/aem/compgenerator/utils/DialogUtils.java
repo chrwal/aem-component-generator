@@ -151,8 +151,7 @@ public class DialogUtils {
         if (property.getItems() != null && !property.getItems().isEmpty()) {
             if (Property.FieldType.MULTIFIELD == property.getTypeAsFieldType()) {
                 handleMultifieldProperty(document, generationConfig, property, propertyNode);
-            } else if (Property.FieldType.HIDDEN_MULTIFIELD == property.getTypeAsFieldType() ||
-                    Property.FieldType.CONTAINER == property.getTypeAsFieldType()) {
+            } else if (property.getTypeAsFieldType().isHandleItemsAsJcrProperties()) {
                 handleProperties(document, propertyNode, generationConfig, property.getItems(), true);
             } else {
                 Node items = propertyNode.appendChild(createUnStructuredNode(document, "items"));
@@ -424,7 +423,7 @@ public class DialogUtils {
             return Constants.RESOURCE_TYPE_MULTIFIELD;
         } else if (Property.FieldType.HIDDEN_MULTIFIELD.equals(type)) {
             return Constants.RESOURCE_TYPE_HIDDEN;
-        } else if (Property.FieldType.UNKOWN.equals(type)) {
+        } else if (Property.FieldType.UNKNOWN.equals(type)) {
             // Support for not defined types. Model name will be the sling model field type
             return property.getTypeOriginal();
         } else {

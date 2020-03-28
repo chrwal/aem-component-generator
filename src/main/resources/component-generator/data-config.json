@@ -377,6 +377,22 @@
                         ]
                     }
                 ]
+            },
+            {
+                "field": "otherFieldLikeTab",
+                "type": "container",
+                "use-existing-field": true,
+                "json-expose": false,
+                "attributes": {
+                    "granite:class": "texttype-showhide-target texttype-container hide",
+                    "sling:resourceType": "granite/ui/components/coral/foundation/tabs"
+                },
+                "items": [
+                    {
+                        "type": "textfield",
+                        "label": "ColorContainer"
+                    }
+                ]
             }
         ],
         "properties-shared": [

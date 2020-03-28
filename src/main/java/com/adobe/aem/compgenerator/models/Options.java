@@ -32,6 +32,9 @@ public class Options implements BaseModel {
     @JsonProperty("generic-javadoc")
     private boolean hasGenericJavadoc;
 
+    @JsonProperty("dialog")
+    private boolean hasDialog = true;
+
     @JsonProperty("js")
     private boolean hasJs;
 
@@ -52,6 +55,9 @@ public class Options implements BaseModel {
 
     @JsonProperty("content-exporter")
     private boolean allowExporting;
+
+    @JsonProperty("content-exporter-typeField")
+    private boolean allowExportingTypeField;
 
     @JsonProperty(value = "group-fields-by-name", defaultValue = "false")
     private boolean groupFieldsByName;
@@ -82,6 +88,14 @@ public class Options implements BaseModel {
 
     public void setHasGenericJavadoc(boolean hasGenericJavadoc) {
         this.hasGenericJavadoc = hasGenericJavadoc;
+    }
+
+    public boolean isHasDialog() {
+        return hasDialog;
+    }
+
+    public void setHasDialog(boolean hasDialog) {
+        this.hasDialog = hasDialog;
     }
 
     public boolean isHasJs() {
@@ -138,6 +152,14 @@ public class Options implements BaseModel {
 
     public void setAllowExporting(boolean allowExporting) {
         this.allowExporting = allowExporting;
+    }
+
+    public boolean isAllowExportingTypeField() {
+        return allowExportingTypeField;
+    }
+
+    public void setAllowExportingTypeField(boolean allowExportingTypeField) {
+        this.allowExportingTypeField = allowExportingTypeField;
     }
 
     public boolean isGroupFieldsByName() {
