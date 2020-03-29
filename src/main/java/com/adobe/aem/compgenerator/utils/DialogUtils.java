@@ -27,6 +27,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -246,10 +247,14 @@ public class DialogUtils {
      */
     private static void processGraniteData(Document document, Element propertyNode, Property property) {
         if (property.getGraniteDate() != null && property.getGraniteDate().size() > 0) {
-            Element graniteData = createUnStructuredNode(document, "granite:data");
-            property.getGraniteDate().entrySet().stream()
-                    .forEach(entry -> graniteData.setAttribute(entry.getKey(), entry.getValue()));
-            propertyNode.appendChild(graniteData);
+            try {
+                Element graniteData = createUnStructuredNode(document, "granite:data");
+                property.getGraniteDate().entrySet().stream()
+                        .forEach(entry -> graniteData.setAttribute(entry.getKey(), entry.getValue()));
+                propertyNode.appendChild(graniteData);
+            } catch (DOMException e) {
+                throw new GeneratorException("Exception while process granite:data for Dialog xml : " + property.getField(), e);
+            }
         }
     }
 
