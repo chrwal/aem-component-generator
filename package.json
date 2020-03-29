@@ -14,7 +14,8 @@
     "maven": "^4.7",
     "glob": "^7.1",
     "optimist": "^0.6",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "fs-extra": "^7.0.1"
   },
   "engines": {
     "node": ">=10.16.0"

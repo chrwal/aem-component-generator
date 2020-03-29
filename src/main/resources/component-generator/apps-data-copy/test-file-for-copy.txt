@@ -1,0 +1,1 @@
+Simple test txt. See doc/Explaining-data-config.md for more information.
