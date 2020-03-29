@@ -78,5 +78,8 @@ buildNumber.properties
 .DS_Store
 
 # Dependency directories
-node_modules/
 jspm_packages/
+
+# npm
+node_modules/
+package-lock.json
