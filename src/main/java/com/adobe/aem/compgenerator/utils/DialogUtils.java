@@ -22,6 +22,7 @@ package com.adobe.aem.compgenerator.utils;
 import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.exceptions.GeneratorException;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
+import com.adobe.aem.compgenerator.models.Options;
 import com.adobe.aem.compgenerator.models.Property;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -174,10 +175,14 @@ public class DialogUtils {
 
     private static String getPropertyFieldName(GenerationConfig generationConfig, Property property) {
         String nameForField = property.getName();
-        if (generationConfig.getOptions().isGroupFieldsByName()) {
-            nameForField = "./" + generationConfig.getName() + "/" + nameForField;
-        } else {
-            nameForField = "./" + nameForField;
+        if (nameForField != null) {
+            String groupFieldsByNameStr = StringUtils.upperCase(generationConfig.getOptions().isGroupFieldsByName());
+            if (BooleanUtils.toBoolean(groupFieldsByNameStr) ||
+                    StringUtils.equals(Options.GroupFieldsByName.DIALOG_ONLY.toString(),groupFieldsByNameStr)) {
+                nameForField = "./" + generationConfig.getName() + "/" + nameForField;
+            } else {
+                nameForField = "./" + nameForField;
+            }
         }
         return nameForField;
     }

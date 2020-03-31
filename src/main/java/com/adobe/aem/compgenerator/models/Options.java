@@ -60,7 +60,8 @@ public class Options implements BaseModel {
     private boolean allowExportingTypeField;
 
     @JsonProperty(value = "group-fields-by-name", defaultValue = "false")
-    private boolean groupFieldsByName;
+    private String groupFieldsByName;
+    public enum GroupFieldsByName {FALSE, DIALOG_ONLY, TRUE}
 
     @JsonProperty("model-adaptables")
     private String[] modelAdaptables;
@@ -162,11 +163,11 @@ public class Options implements BaseModel {
         this.allowExportingTypeField = allowExportingTypeField;
     }
 
-    public boolean isGroupFieldsByName() {
+    public String isGroupFieldsByName() {
         return groupFieldsByName;
     }
 
-    public void setGroupFieldsByName(boolean groupFieldsByName) {
+    public void setGroupFieldsByName(String groupFieldsByName) {
         this.groupFieldsByName = groupFieldsByName;
     }
 

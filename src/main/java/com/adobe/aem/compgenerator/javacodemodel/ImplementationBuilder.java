@@ -29,6 +29,7 @@ import com.adobe.cq.export.json.ExporterConstants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sun.codemodel.*;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,13 +69,13 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * Construct a new Sling Model implementation class.
      *
-     * @param codeModel ..
+     * @param codeModel        ..
      * @param generationConfig ..
-     * @param className ..
-     * @param interfaceClass ..
+     * @param className        ..
+     * @param interfaceClass   ..
      */
     ImplementationBuilder(JCodeModel codeModel, GenerationConfig generationConfig, String className,
-            JClass interfaceClass) {
+                          JClass interfaceClass) {
         super(codeModel, generationConfig);
         this.className = className;
         this.interfaceClass = interfaceClass;
@@ -125,7 +126,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * adds fields to java model.
      *
-     * @param properties ..
+     * @param properties            ..
      * @param handleAsChildProperty
      */
     private void addFieldVars(JDefinedClass jc, List<Property> properties, boolean handleAsChildProperty) {
@@ -175,22 +176,21 @@ public class ImplementationBuilder extends JavaCodeBuilder {
                         .narrow(codeModel.ref(JavaCodeModel.getFieldType(property.getItems().get(0)))) :
                 codeModel.ref(fieldType);
         JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
-
+        JAnnotationUse param;
         if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
-            jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
-                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+            param = jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
 
         } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
             //Current implementation does not support child resources other than private
-            jFieldVar.annotate(codeModel.ref(ValueMapValue.class)).param(INJECTION_STRATEGY,
-                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+            param = jFieldVar.annotate(codeModel.ref(ValueMapValue.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
         } else {
-            jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class)).param(INJECTION_STRATEGY,
-                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY))
-                    .param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
+            param = jFieldVar.annotate(codeModel.ref(SharedValueMapValue.class)).param(INJECTION_STRATEGY,
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
         }
+        String annotationFieldName = getAnnotationFieldName(generationConfig, property);
+        param.param(INJECTION_NAME, annotationFieldName);
 
         setupFieldGetterAnnotations(jFieldVar, property);
     }
@@ -221,8 +221,8 @@ public class ImplementationBuilder extends JavaCodeBuilder {
             }
             JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
             jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
-                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
-
+                    codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY)).
+                    param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
             setupFieldGetterAnnotations(jFieldVar, property);
         }
     }
@@ -246,7 +246,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
     /**
      * add getter method for jFieldVar passed in.
      *
-     * @param jc ..
+     * @param jc        ..
      * @param jFieldVar ..
      */
     private void addGetter(JDefinedClass jc, JFieldVar jFieldVar) {
@@ -337,11 +337,14 @@ public class ImplementationBuilder extends JavaCodeBuilder {
 
     private static String getAnnotationFieldName(GenerationConfig generationConfig, Property property) {
         String nameForField = property.getName();
-        if (generationConfig.getOptions().isGroupFieldsByName()) {
-            nameForField = "./" + generationConfig.getName() + "/" + nameForField;
-        } else {
-            nameForField = "./" + nameForField;
+        if (nameForField != null) {
+            String groupFieldsByName = StringUtils.upperCase(generationConfig.getOptions().isGroupFieldsByName());
+            if (BooleanUtils.toBoolean(groupFieldsByName)) {
+                nameForField = "./" + generationConfig.getName() + "/" + nameForField;
+            } else {
+                nameForField = "./" + nameForField;
 
+            }
         }
         return nameForField;
     }

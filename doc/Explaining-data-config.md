@@ -36,5 +36,6 @@
     - `options.properties[].use-existing-field`: **(Container type Only)**  whether or not to generate a new field or reuse already defined one
     - `options.properties[].json-expose`: by default, the content exporter will ignore all properties unless `json-expose` is set to `true`
     - `options.properties[].json-property`: the json key for the property to be used when content export is configured
+    - `options.properties[].group-fields-by-name`: [true,false,DIALOG_ONLY] prefix folder for all field names
 - `options.properties-shared`: properties to create in shared dialog for this component. If empty, no shared dialog will be created
 - `options.properties-global`: properties to create in global dialog for this component. If empty, no global dialog will be created
