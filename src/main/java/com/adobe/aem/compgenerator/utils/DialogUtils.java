@@ -149,6 +149,7 @@ public class DialogUtils {
         }
         processAttributes(propertyNode, property);
         processGraniteData(document, propertyNode, property);
+        processDataSource(document, propertyNode, property);
 
         if (property.getItems() != null && !property.getItems().isEmpty()) {
             if (Property.FieldType.MULTIFIELD == property.getTypeAsFieldType()) {
@@ -262,6 +263,20 @@ public class DialogUtils {
             }
         }
     }
+
+    private static void processDataSource(Document document, Element propertyNode, Property property) {
+        if (property.getDataSource() != null && property.getDataSource().size() > 0) {
+            try {
+                Element datasource = createUnStructuredNode(document, "datasource");
+                property.getDataSource().entrySet().stream()
+                        .forEach(entry -> datasource.setAttribute(entry.getKey(), entry.getValue()));
+                propertyNode.appendChild(datasource);
+            } catch (DOMException e) {
+                throw new GeneratorException("Exception while process datasource for Dialog xml : " + property.getField(), e);
+            }
+        }
+    }
+
 
     /**
      * Process the dialog node item by setting property attributes on it.

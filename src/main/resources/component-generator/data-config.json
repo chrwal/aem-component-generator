@@ -112,6 +112,9 @@
                     "defaultValue": "opt1",
                     "value": "opt1"
                 },
+                "datasource": {
+                    "sling:resource...": "some/resource/path"
+                },
                 "items": [
                     {
                         "field": "option1",

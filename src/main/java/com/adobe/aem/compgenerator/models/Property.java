@@ -119,6 +119,8 @@ public class Property implements BaseModel {
     private List<Property> items;
     @JsonProperty("granite:data")
     private Map<String, String> graniteDate;
+    @JsonProperty("datasource")
+    private Map<String, String> dataSource;
 
     @JsonProperty(value = "model-name")
     private String modelName;
@@ -237,6 +239,14 @@ public class Property implements BaseModel {
 
     public void setGraniteDate(Map<String, String> graniteDate) {
         this.graniteDate = graniteDate;
+    }
+
+    public Map<String, String> getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(Map<String, String> dataSource) {
+        this.dataSource = dataSource;
     }
 
     public String getModelName() {
