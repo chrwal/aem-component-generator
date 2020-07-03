@@ -10,6 +10,7 @@ public enum CqAction {
 
     EDIT("edit"),
     INSERT("insert"),
+    COPYMOVE("copymove"),
     DELETE("delete");
     private final String value;
     private final static Map<String, CqAction> CONSTANTS = new HashMap<String, CqAction>();
