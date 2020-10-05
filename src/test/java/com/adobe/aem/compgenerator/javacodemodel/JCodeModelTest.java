@@ -83,13 +83,13 @@ class JCodeModelTest {
         Assertions.assertEquals("getHiddenMultifield1Item", demoImpl.methods().toArray(new JMethod[]{})[0].name());
 
         Assertions.assertEquals(3, demoImpl.fields().size());
-        Assertions.assertEquals("ChildResourceFromRequest",
+        Assertions.assertEquals("ChildResource",
                 demoImpl.fields().get("hiddenMultifield1Item").annotations().toArray(new JAnnotationUse[]{})[0]
                         .getAnnotationClass().name());
-        Assertions.assertEquals("ChildResourceFromRequest",
+        Assertions.assertEquals("ChildResource",
                 demoImpl.fields().get("hiddenMultifieldMoreThan1Items").annotations().toArray(new JAnnotationUse[]{})[0]
                         .getAnnotationClass().name());
-        Assertions.assertEquals("ChildResourceFromRequest",
+        Assertions.assertEquals("ChildResource",
                 demoImpl.fields().get("hiddenMultifieldUseExsitingModelTrue").annotations().toArray(new JAnnotationUse[]{})[0]
                         .getAnnotationClass().name());
 

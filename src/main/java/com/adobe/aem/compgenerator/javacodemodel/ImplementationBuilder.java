@@ -19,7 +19,6 @@
  */
 package com.adobe.aem.compgenerator.javacodemodel;
 
-import com.adobe.acs.commons.models.injectors.annotation.ChildResourceFromRequest;
 import com.adobe.acs.commons.models.injectors.annotation.SharedValueMapValue;
 import com.adobe.aem.compgenerator.Constants;
 import com.adobe.aem.compgenerator.models.GenerationConfig;
@@ -28,7 +27,18 @@ import com.adobe.cq.export.json.ComponentExporter;
 import com.adobe.cq.export.json.ExporterConstants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sun.codemodel.*;
+import com.sun.codemodel.JAnnotationArrayMember;
+import com.sun.codemodel.JAnnotationUse;
+import com.sun.codemodel.JClass;
+import com.sun.codemodel.JClassAlreadyExistsException;
+import com.sun.codemodel.JCodeModel;
+import com.sun.codemodel.JDefinedClass;
+import com.sun.codemodel.JExpr;
+import com.sun.codemodel.JExpression;
+import com.sun.codemodel.JFieldVar;
+import com.sun.codemodel.JMethod;
+import com.sun.codemodel.JMod;
+import com.sun.codemodel.JPackage;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +47,7 @@ import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.models.annotations.Exporter;
 import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.ChildResource;
 import org.apache.sling.models.annotations.injectorspecific.InjectionStrategy;
 import org.apache.sling.models.annotations.injectorspecific.SlingObject;
 import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
@@ -178,7 +189,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
         JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
         JAnnotationUse param;
         if (property.getTypeAsFieldType().equals(Property.FieldType.IMAGE)) {
-            param = jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+            param = jFieldVar.annotate(codeModel.ref(ChildResource.class)).param(INJECTION_STRATEGY,
                     codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY));
 
         } else if (Property.PropertyType.PRIVATE.equals(property.getPropertyType()) || property.isChildResource()) {
@@ -220,7 +231,7 @@ public class ImplementationBuilder extends JavaCodeBuilder {
                 fieldClass = codeModel.ref(fieldType).narrow(narrowedClass);
             }
             JFieldVar jFieldVar = jc.field(PRIVATE, fieldClass, property.getField());
-            jFieldVar.annotate(codeModel.ref(ChildResourceFromRequest.class)).param(INJECTION_STRATEGY,
+            jFieldVar.annotate(codeModel.ref(ChildResource.class)).param(INJECTION_STRATEGY,
                     codeModel.ref(InjectionStrategy.class).staticRef(OPTIONAL_INJECTION_STRATEGY)).
                     param(INJECTION_NAME, getAnnotationFieldName(generationConfig, property));
             setupFieldGetterAnnotations(jFieldVar, property);
